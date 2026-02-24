@@ -7,11 +7,15 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# ========================
+# Security
+# ========================
+
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 DEBUG = False
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*"]  # You can restrict later
 
 # ========================
 # Applications
@@ -67,22 +71,16 @@ TEMPLATES = [
 WSGI_APPLICATION = "subio.wsgi.application"
 
 # ========================
-# Database
+# Database (Neon PostgreSQL)
 # ========================
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if DATABASE_URL:
-    DATABASES = {
-        "default": dj_database_url.parse(DATABASE_URL)
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
+DATABASES = {
+    "default": dj_database_url.parse(
+        os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True,   # IMPORTANT for Neon
+    )
+}
 
 # ========================
 # Password Validators
@@ -105,7 +103,7 @@ USE_I18N = True
 USE_TZ = True
 
 # ========================
-# Cloudinary
+# Cloudinary (Media Storage)
 # ========================
 
 CLOUDINARY_STORAGE = {
@@ -132,12 +130,11 @@ MEDIA_URL = "/media/"
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
+# REMOVE STATICFILES_DIRS if folder doesn't exist
+# STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # ========================
-# Auth
+# Auth Redirects
 # ========================
 
 LOGIN_REDIRECT_URL = "/"
@@ -154,6 +151,18 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# ========================
+# Security (Recommended for Production)
+# ========================
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://your-app-name.onrender.com",
+]
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 # ========================
 # Default PK
