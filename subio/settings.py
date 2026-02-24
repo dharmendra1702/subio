@@ -25,9 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-d@3^u3ebv#b_5bchc7h#7pca0p%*p2juiejx!)vau6dd#bqy-0'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -155,3 +155,5 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "cravecartdr@gmail.com"
 EMAIL_HOST_PASSWORD = "mztvouwuimfbuadu"
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
