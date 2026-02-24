@@ -6,9 +6,13 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 
-def home(request):
-    return render(request, "home.html")
+# def home(request):
+#     return render(request, "home.html")
 
+from django.http import HttpResponse
+
+def home(request):
+    return HttpResponse("Django working")
 
 def login_page(request):
 
