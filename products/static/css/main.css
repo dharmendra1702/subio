@@ -935,10 +935,8 @@
      min-height:70vh;
      background:#f8f5ef;
 }
-/* IMAGE SIDE */
- .story-image{
-     background:url("/static/images/story-editorial.jpg") center/cover no-repeat;
-}
+
+
 /* TEXT SIDE */
  .story-text{
      padding:95px 70px;
@@ -3413,4 +3411,9 @@ html,body{
     color:#000;
     text-align:left;
     display:flex; 
+}
+
+.buy-item {
+    display: inline-block;
+    cursor: pointer;
 }

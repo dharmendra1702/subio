@@ -166,7 +166,9 @@
 <!-- ================= ABOUT SECTION ================= -->
 <section id="about" class="story-editorial">
 
-  <div class="story-image"></div>
+  <div class="story-image"
+     style="background:url('{% static 'images/story-editorial.jpg' %}') center/cover no-repeat;">
+</div>
 
   <div class="story-text">
 
@@ -314,9 +316,13 @@
 
 <div class="divider"></div>
 
-<div class="buy-item" href="https://www.amazon.in/s?k=subio&crid=2IFJ1PC9SAGCN&sprefix=subi%2Caps%2C497&ref=nb_sb_noss_2" target="_blank">
-<img src="{% static 'images/amazon.png' %}">
-</div>
+<a class="buy-item"
+   href="https://www.amazon.in/s?k=subio&crid=2IFJ1PC9SAGCN&sprefix=subi%2Caps%2C497&ref=nb_sb_noss_2"
+   target="_blank">
+
+    <img src="{% static 'images/amazon.png' %}" alt="Buy on Amazon">
+
+</a>
 
 <div class="divider"></div>
 
