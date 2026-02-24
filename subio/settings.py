@@ -127,6 +127,11 @@ STORAGES = {
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+import dj_database_url
+
+DATABASES = {
+    'default': dj_database_url.parse(os.environ.get("DATABASE_URL"))
+}
 # ========================
 # Auth Redirects
 # ========================
@@ -151,3 +156,14 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # ========================
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+if not User.objects.filter(username="admin").exists():
+    User.objects.create_superuser(
+        "subio",
+        "dharmu17reddy@gmail.com",
+        "Subio123"
+    )
