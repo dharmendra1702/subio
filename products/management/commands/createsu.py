@@ -4,15 +4,15 @@ from django.contrib.auth import get_user_model
 class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
-
         User = get_user_model()
 
-        username = "subio"
-        email = "dharmu17reddy@gmail.com"
-        password = "Subio123"
+        if not User.objects.filter(username="admin").exists():
+            User.objects.create_superuser(
+                username="admin",
+                email="dharmu17reddy@gmail.com",
+                password="Subio123"
+            )
 
-        if not User.objects.filter(username=username).exists():
-            User.objects.create_superuser(username, email, password)
-            print("Superuser created")
+            self.stdout.write("Superuser created")
         else:
-            print("Superuser already exists")
+            self.stdout.write("Superuser already exists")
