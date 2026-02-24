@@ -401,7 +401,7 @@
      opacity:1;
 }
  .carousel-section{
-     background-image: url("/static/images/pbg.png");
+     background-image: url("../images/pbg.png");
     /* change file */
      background-size: cover;
      background-position: center;
