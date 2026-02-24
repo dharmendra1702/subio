@@ -71,12 +71,21 @@ WSGI_APPLICATION = 'subio.wsgi.application'
 # Database (SQLite)
 # ========================
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+import dj_database_url
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(DATABASE_URL)
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 # ========================
 # Password Validation
@@ -127,11 +136,7 @@ STORAGES = {
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-import dj_database_url
 
-DATABASES = {
-    'default': dj_database_url.parse(os.environ.get("DATABASE_URL"))
-}
 # ========================
 # Auth Redirects
 # ========================
@@ -157,13 +162,3 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
-if not User.objects.filter(username="admin").exists():
-    User.objects.create_superuser(
-        "subio",
-        "dharmu17reddy@gmail.com",
-        "Subio123"
-    )
