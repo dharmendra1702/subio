@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 import dj_database_url
 
+# Load .env locally only (Render already injects env vars)
 if os.path.exists(".env"):
     from dotenv import load_dotenv
     load_dotenv()
@@ -12,11 +13,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Security
 # ========================
 
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-fallback-key")
 
 DEBUG = False
 
-ALLOWED_HOSTS = ["*"]  # You can restrict later
+ALLOWED_HOSTS = ["*"]
 
 # ========================
 # Applications
@@ -109,7 +110,7 @@ USE_I18N = True
 USE_TZ = True
 
 # ========================
-# Cloudinary (Media Storage)
+# Cloudinary Media
 # ========================
 
 CLOUDINARY_STORAGE = {
@@ -136,11 +137,8 @@ MEDIA_URL = "/media/"
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# REMOVE STATICFILES_DIRS if folder doesn't exist
-# STATICFILES_DIRS = [BASE_DIR / "static"]
-
 # ========================
-# Auth Redirects
+# Auth
 # ========================
 
 LOGIN_REDIRECT_URL = "/"
@@ -159,7 +157,7 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # ========================
-# Security (Recommended for Production)
+# Security (Render)
 # ========================
 
 CSRF_TRUSTED_ORIGINS = [
