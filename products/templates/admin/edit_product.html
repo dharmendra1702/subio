@@ -1,0 +1,69 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/add_product.css' %}">
+
+<div class="container">
+
+<a href="javascript:history.back()" class="back-btn">← Back</a>
+
+<form method="POST" enctype="multipart/form-data" class="product-card">
+
+{% csrf_token %}
+
+<!-- IMAGE -->
+
+<div class="image-box">
+
+<h3>Current Image</h3>
+
+<img src="{{ product.image.url }}" style="max-width:250px;border-radius:15px;margin-bottom:15px">
+
+<input type="file" name="image">
+
+</div>
+
+<!-- FORM -->
+
+<div class="form-box">
+
+<h2>Edit Product</h2>
+
+<input name="name" value="{{ product.name }}" required>
+
+<textarea name="description">{{ product.description }}</textarea>
+
+<div class="row">
+<input name="price" value="{{ product.price }}" required>
+<input name="stock" value="{{ product.stock }}" required>
+</div>
+
+<input name="gst_percentage" value="{{ product.gst_percentage }}" placeholder="GST %">
+
+<select name="category">
+{% for c in categories %}
+<option value="{{ c.id }}" {% if product.category_id == c.id %}selected{% endif %}>
+{{ c.name }}
+</option>
+{% endfor %}
+</select>
+
+<h3>Highlights</h3>
+<textarea name="highlights">{{ product.highlights }}</textarea>
+
+<h3>Specifications</h3>
+
+<input name="brand" value="{{ product.brand }}" placeholder="Brand">
+<input name="net_weight" value="{{ product.net_weight }}" placeholder="Net Weight">
+<input name="shelf_life" value="{{ product.shelf_life }}" placeholder="Shelf Life">
+
+<h3>SEO</h3>
+
+<input name="meta_title" value="{{ product.meta_title }}" placeholder="Meta Title">
+<textarea name="meta_description">{{ product.meta_description }}</textarea>
+
+<button class="submit">Update Product</button>
+
+</div>
+
+</form>
+
+</div>

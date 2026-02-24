@@ -1,0 +1,126 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/add_product.css' %}">
+
+<div class="container">
+
+<a href="javascript:history.back()" class="back-btn">← Back</a>
+
+<form method="POST" enctype="multipart/form-data" class="product-card" id="productForm">
+{% csrf_token %}
+
+<!-- LEFT SIDE IMAGES -->
+
+<div class="image-box">
+
+<h3>Product Images</h3>
+
+<input type="file" name="image" id="mainImg" hidden required>
+<label for="mainImg" class="upload-main">Upload Main Image</label>
+
+<img id="mainPreview">
+
+<h4>Gallery Images</h4>
+
+<input type="file" name="gallery" id="gallery" multiple>
+<div id="galleryPreview"></div>
+
+</div>
+
+<!-- RIGHT SIDE FORM -->
+
+<div class="form-box">
+
+<h2>Basic Info</h2>
+
+<input name="name" placeholder="Product name" required>
+<textarea name="description" placeholder="Description"></textarea>
+
+<div class="row">
+<input name="price" type="number" placeholder="Price ₹" required>
+<input name="stock" type="number" placeholder="Stock" required>
+</div>
+
+<input name="gst_percentage" type="number" placeholder="GST %">
+
+<!-- CATEGORY -->
+
+<h2>Category</h2>
+
+<select name="category" required>
+<option value="">Select Category</option>
+{% for c in categories %}
+<option value="{{ c.id }}">{{ c.name }}</option>
+{% endfor %}
+</select>
+
+<!-- HIGHLIGHTS -->
+
+<h2>Highlights</h2>
+
+<textarea name="highlights"
+placeholder="• Iron rich&#10;• No preservatives&#10;• Premium quality">
+</textarea>
+
+<!-- SPECIFICATIONS -->
+
+<h2>Specifications</h2>
+
+<input name="brand" placeholder="Brand">
+<input name="net_weight" placeholder="Net weight (1kg)">
+<input name="shelf_life" placeholder="Shelf life (9 Months)">
+
+<!-- VARIANTS -->
+
+<h2>Variants (Optional)</h2>
+
+<div id="variants"></div>
+<button type="button" onclick="addVariant()">Add Variant</button>
+
+<!-- SEO -->
+
+<h2>SEO Settings</h2>
+
+<input name="meta_title" placeholder="Meta Title">
+<textarea name="meta_description" placeholder="Meta Description"></textarea>
+
+<button class="submit">Save Product</button>
+
+</div>
+
+</form>
+
+</div>
+
+<script>
+
+/* MAIN IMAGE PREVIEW */
+
+mainImg.onchange=e=>{
+mainPreview.src=URL.createObjectURL(e.target.files[0]);
+mainPreview.style.display="block";
+}
+
+/* GALLERY PREVIEW */
+
+gallery.onchange=e=>{
+galleryPreview.innerHTML="";
+[...e.target.files].forEach(file=>{
+let img=document.createElement("img");
+img.src=URL.createObjectURL(file);
+galleryPreview.appendChild(img);
+});
+}
+
+/* VARIANTS */
+
+function addVariant(){
+let div=document.createElement("div");
+div.className="variant-row";
+div.innerHTML=`
+<input name="variant_size[]" placeholder="Size (500g)">
+<input name="variant_price[]" type="number" placeholder="Price">
+`;
+variants.appendChild(div);
+}
+
+</script>

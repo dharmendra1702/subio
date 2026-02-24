@@ -1,0 +1,186 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/product_detail.css' %}">
+
+<div class="product-wrapper">
+
+<!-- LEFT -->
+
+<div class="product-images">
+
+  <div class="slider" id="slider">
+
+    <button class="arrow left" onclick="prevImg()">‹</button>
+
+    <img src="{{ product.image.url }}" class="main-img" id="mainImg">
+
+    <button class="arrow right" onclick="nextImg()">›</button>
+
+  </div>
+
+  <div class="thumbs" id="thumbs">
+
+    <!-- main image as first thumb -->
+    <img src="{{ product.image.url }}" class="thumb active">
+
+    {% for img in product.images.all %}
+      <img src="{{ img.image.url }}" class="thumb">
+    {% endfor %}
+
+  </div>
+
+</div>
+<!-- RIGHT -->
+
+<div class="product-info">
+
+<h1>{{ product.name }}</h1>
+
+<div class="price">₹{{ product.price }}</div>
+
+<p class="gst">Inclusive of {{ product.gst_percentage }}% GST</p>
+
+<div class="stock">
+{% if product.stock > 0 %}
+In Stock ({{ product.stock }})
+{% else %}
+Out of Stock
+{% endif %}
+</div>
+
+<form method="POST" action="/cart/">
+{% csrf_token %}
+<input type="hidden" name="product_id" value="{{ product.id }}">
+<button class="cart-btn">Add To Cart</button>
+</form>
+
+<!-- HIGHLIGHTS -->
+
+<div class="section">
+<h3>Product Highlights</h3>
+<ul>
+{% if product.highlights %}
+{% for h in product.highlights.splitlines %}
+<li>{{ h }}</li>
+{% endfor %}
+{% else %}
+<li>No highlights available</li>
+{% endif %}
+</ul>
+</div>
+
+<!-- TABS -->
+
+<div class="tabs">
+<button class="tab active" onclick="tab('spec',this)">Specifications</button>
+<button class="tab" onclick="tab('desc',this)">Description</button>
+</div>
+
+<!-- SPECIFICATIONS -->
+
+<div id="spec" class="tab-content active">
+
+<div class="spec-grid">
+
+<span>Brand</span><span>{{ product.brand|default:"—" }}</span>
+
+<span>Category</span><span>{{ product.category.name }}</span>
+
+<span>Net Weight</span><span>{{ product.net_weight|default:"—" }}</span>
+
+<span>Shelf Life</span><span>{{ product.shelf_life|default:"—" }}</span>
+
+<span>GST</span><span>{{ product.gst_percentage }}%</span>
+
+</div>
+
+{% if product.variant_set.exists %}
+<h4>Variants</h4>
+<ul class="variants">
+{% for v in product.variant_set.all %}
+<li>{{ v.size }} – ₹{{ v.price }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+</div>
+
+<!-- DESCRIPTION -->
+
+<div id="desc" class="tab-content">
+
+{% if product.description %}
+<p>{{ product.description }}</p>
+{% else %}
+<p>No description available.</p>
+{% endif %}
+
+{% if product.meta_description %}
+<p class="seo">{{ product.meta_description }}</p>
+{% endif %}
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const mainImg = document.getElementById("mainImg");
+const slider = document.getElementById("slider");
+const thumbs = document.querySelectorAll(".thumb");
+
+let current = 0;
+
+/* INIT */
+
+thumbs.forEach((t,i)=>{
+  t.onclick = ()=>setImg(i);
+});
+
+/* SET IMAGE */
+
+function setImg(i){
+  current = i;
+  mainImg.src = thumbs[i].src;
+
+  thumbs.forEach(t=>t.classList.remove("active"));
+  thumbs[i].classList.add("active");
+}
+
+/* ARROWS */
+
+function nextImg(){
+  current = (current + 1) % thumbs.length;
+  setImg(current);
+}
+
+function prevImg(){
+  current = (current - 1 + thumbs.length) % thumbs.length;
+  setImg(current);
+}
+
+/* MOBILE SWIPE */
+
+let startX = 0;
+
+slider.addEventListener("touchstart",e=>{
+  startX = e.touches[0].clientX;
+});
+
+slider.addEventListener("touchend",e=>{
+  let endX = e.changedTouches[0].clientX;
+  if(startX - endX > 40) nextImg();
+  if(endX - startX > 40) prevImg();
+});
+
+/* TABS */
+
+function tab(id,btn){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById(id).classList.add("active");
+}
+
+</script>

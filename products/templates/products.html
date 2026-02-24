@@ -1,0 +1,369 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/user_products.css' %}">
+<link rel="stylesheet" href="{% static 'css/header_footer.css' %}">
+
+<title>Subio Foods - Products</title>
+</head>
+
+<body>
+
+
+<header class="navbar">
+
+  <!-- LEFT -->
+  <div class="nav-left">
+    <img src="{% static 'images/subio.png' %}" class="logo-img">
+  </div>
+
+  <!-- CENTER -->
+  <nav class="nav-center">
+    <a href="#about">About</a>
+    <a href="{% url 'products' %}">Products</a>
+    <a href="#contact">Contact</a>
+  </nav>
+
+  <!-- RIGHT -->
+<div class="nav-right">
+
+  {% if not user.is_staff %}
+    <a href="{% url 'cart' %}" class="nav-cart">Cart</a>
+  {% endif %}
+
+  <!-- ACCOUNT DROPDOWN -->
+  <div class="account-wrap">
+
+    <button class="account-btn" id="accountBtn">Account</button>
+
+    <div class="account-dropdown" id="accountDropdown">
+
+      {% if user.is_authenticated %}
+
+      <div class="account-user">
+      Hi, {{ user.username }} 👋 
+      </div>
+
+      {% if user.is_staff %}
+        <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+      {% else %}
+        <a href="#">Profile</a>
+      {% endif %}
+
+      <a href="#" id="logoutBtn">Logout</a>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+  <!-- mobile hamburger -->
+  <div class="hamburger" id="hamburger">
+  <span></span>
+  <span></span>
+  <span></span>
+</div>
+
+</div>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+
+  <a href="#about">About</a>
+  <a href="{% url 'products' %}">Products</a>
+  <a href="#contact">Contact</a>
+
+  <!-- MOBILE ACCOUNT -->
+
+  <div class="mobile-account">
+
+    <div id="mobileAccountBtn" class="mobile-account-btn">
+      Account ▾
+    </div>
+
+    <div id="mobileAccountDropdown" class="mobile-account-dropdown">
+
+      {% if user.is_authenticated %}
+
+        <div class="account-user">
+        Hi, {{ user.username }} 👋
+        </div>
+
+        {% if user.is_staff %}
+          <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+        {% else %}
+          <a href="#">Profile</a>
+        {% endif %}
+
+        <a href="#" id="logoutBtnMobile">Logout</a>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>
+
+</header>
+
+<section class="shop">
+
+<h1>Our Products</h1>
+<p class="subtitle">Premium nutrition crafted with care</p>
+
+<!-- ================= CATEGORY SLIDER ================= -->
+
+<div class="category-slider">
+  <div class="category-wrapper" id="catTrack">
+
+    <!-- ALL -->
+    <div class="cat-circle active" onclick="filterCat('all',this)">
+      <img src="{% static 'images/all.png' %}" loading="lazy">
+      <span>All</span>
+      <div class="underline"></div>
+    </div>
+
+    {% for c in categories %}
+    <div class="cat-circle" onclick="filterCat('{{ c.id }}',this)">
+      {% if c.image %}
+        <img src="{{ c.image.url }}" loading="lazy" width="90" height="90">
+      {% else %}
+        <img src="{% static 'images/all.png' %}" loading="lazy">
+      {% endif %}
+      <span>{{ c.name }}</span>
+      <div class="underline"></div>
+    </div>
+    {% endfor %}
+
+  </div>
+</div>
+
+<!-- ================= FILTER | SEARCH | SORT ================= -->
+
+<div class="filter-panel">
+
+  <div class="filter-dropdown">
+    <button class="filter-btn" onclick="toggleFilters()">
+      Filters ▾
+    </button>
+
+    <div class="filter-menu" id="filterBox">
+
+      <div class="filter-item">
+        <label>Max Price (₹)</label>
+        <input type="range" min="0" max="2000" value="2000"
+               oninput="filterPrice(this.value)">
+        <span id="priceVal">2000</span>
+      </div>
+
+      <div class="filter-item">
+        <label>
+          <input type="checkbox" onchange="filterStock(this)">
+          In Stock
+        </label>
+      </div>
+
+      <div class="filter-item">
+        <label>Net Weight</label>
+        <select onchange="filterWeight(this.value)">
+          <option value="">Select</option>
+          <option value="250">250g+</option>
+          <option value="500">500g+</option>
+          <option value="1000">1kg+</option>
+        </select>
+      </div>
+
+      <button class="clear-btn" onclick="clearFilters()">Clear Filters</button>
+
+    </div>
+  </div>
+
+  <input id="search" placeholder="Search products…" onkeyup="searchProducts()">
+
+  <select onchange="sortProducts(this.value)" class="sort-select">
+    <option value="">Sort by</option>
+    <option value="relevance">Relevance</option>
+    <option value="low">Price Low → High</option>
+    <option value="high">Price High → Low</option>
+    <option value="name">Name A → Z</option>
+  </select>
+
+</div>
+<!-- ================= PRODUCTS GRID ================= -->
+
+<div class="products" id="grid">
+
+{% for p in products %}
+
+<div class="card"
+data-name="{{ p.name|lower }}"
+data-price="{{ p.price }}"
+data-cat="{{ p.category.id }}"
+data-weight="{{ p.net_weight|default:'0' }}">
+
+<span class="heart" onclick="wish(this)">♡</span>
+
+<a href="{% url 'product_detail' p.id %}">
+{% if p.image %}
+<img src="{{ p.image.url }}" loading="lazy" width="300" height="240">
+{% else %}
+<img src="{% static 'images/all.png' %}" loading="lazy">
+{% endif %}
+</a>
+
+<div class="card-body">
+
+<h3>{{ p.name }}</h3>
+<p>₹{{ p.price }}</p>
+
+<div class="buttons">
+
+<a href="{% url 'product_detail' p.id %}" class="view">View</a>
+
+<form method="POST" action="{% url 'cart' %}">
+{% csrf_token %}
+<input type="hidden" name="product_id" value="{{ p.id }}">
+<button class="cart">Cart</button>
+</form>
+
+</div>
+
+</div>
+</div>
+
+{% endfor %}
+
+</div>
+
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+
+<div class="footer-inner">
+
+<!-- BRAND -->
+
+<div class="footer-col brand">
+
+  <div class="brand-row">
+    <img src="{% static 'images/subio.png' %}" alt="Subio Foods Logo" class="footer-logo">
+  </div>
+
+  <p class="brand-text">
+    Naturally grown millets & spices  from trusted farmers to healthy homes.
+  </p>
+
+  <div class="social">
+    <div>
+  <a href="#" style="display:inline-block;margin-right:12px;">
+    <img src="{% static 'images/facebook.png' %}" width="20">
+  </a>
+
+  <a href="#" style="display:inline-block;margin-right:12px;">
+    <img src="{% static 'images/instagram.png' %}" width="20">
+  </a>
+
+  <a href="#" style="display:inline-block;">
+    <img src="{% static 'images/twitter.png' %}" width="20">
+  </a>
+</div>
+</div>
+
+</div>
+
+<!-- COMPANY -->
+
+<div class="footer-col">
+  <h4>Company</h4>
+  <a href="#about">About Us</a>
+  <a href="{% url 'products' %}">Products</a>
+  <a href="#contact">Contact</a>
+</div>
+
+<!-- SUPPORT -->
+
+<div class="footer-col">
+  <h4>Support</h4>
+  <a href="#">FAQs</a>
+  <a href="#">Shipping Policy</a>
+  <a href="#">Terms & Conditions</a>
+  <a href="#">Privacy Policy</a>
+</div>
+
+<!-- NEWSLETTER -->
+
+<div class="footer-col offers">
+
+<h4>Get Exclusive Offers</h4>
+
+<form class="offer-form" id="newsletterForm"
+      data-url="{% url 'newsletter' %}"
+      method="post">
+
+{% csrf_token %}
+
+<input type="email"
+       id="newsletterEmail"
+       name="email"
+       placeholder="Enter your email"
+       required>
+
+<button type="submit">Subscribe</button>
+
+</form>
+
+<p id="newsletterMsg"></p>
+
+<div class="contact">
+<p><strong>Contact</strong></p>
+<p>subiofoods@gmail.com</p>
+<p>+91 96068 23003</p>
+</div>
+
+</div>
+
+</div>
+
+<div class="footer-bottom">
+<p>© 2026 Subio Foods. All rights reserved.</p>
+</div>
+
+</footer>
+
+<!-- LOGOUT MODAL -->
+<div id="logoutModal" class="logout-modal">
+
+  <div class="logout-box">
+    <h3>Logout?</h3>
+    <p>Are you sure you want to logout?</p>
+
+    <div class="logout-actions">
+      <button id="cancelLogout">Cancel</button>
+      <button id="confirmLogout">Logout</button>
+    </div>
+  </div>
+
+</div>
+
+<form id="logoutForm" method="POST" action="{% url 'logout' %}">
+    {% csrf_token %}
+</form>
+
+</div>
+<script src="{% static 'js/navbar.js' %}"></script>
+<script src="{% static 'js/scroll.js' %}"></script>
+<script src="{% static 'js/shop.js' %}"></script>
+
+</body>
+</html>

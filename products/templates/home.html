@@ -1,0 +1,542 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subio Foods</title>
+
+<meta name="csrf-token" content="{{ csrf_token }}">
+<link rel="stylesheet" href="{% static 'css/main.css' %}">
+<link rel="icon" href="{% static 'images/favicon.ico' %}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+
+<header class="navbar">
+
+  <!-- LEFT -->
+  <div class="nav-left">
+    <img src="{% static 'images/subio.png' %}" class="logo-img">
+  </div>
+
+  <!-- CENTER -->
+  <nav class="nav-center">
+    <a href="#about">About</a>
+    <a href="{% url 'products' %}">Products</a>
+    <a href="#contact">Contact</a>
+  </nav>
+
+  <!-- RIGHT -->
+<div class="nav-right">
+
+  {% if not user.is_staff %}
+    <a href="{% url 'cart' %}" class="nav-cart">Cart</a>
+  {% endif %}
+
+  <!-- ACCOUNT DROPDOWN -->
+  <div class="account-wrap">
+
+    <button class="account-btn" id="accountBtn">Account</button>
+
+    <div class="account-dropdown" id="accountDropdown">
+
+      {% if user.is_authenticated %}
+
+      <div class="account-user">
+      Hi, {{ user.username }} 👋 
+      </div>
+
+      {% if user.is_staff %}
+        <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+      {% else %}
+        <a href="#">Profile</a>
+      {% endif %}
+
+      <a href="#" id="logoutBtn">Logout</a>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+  <!-- mobile hamburger -->
+  <div class="hamburger" id="hamburger">
+  <span></span>
+  <span></span>
+  <span></span>
+</div>
+
+</div>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+
+  <a href="#about">About</a>
+  <a href="{% url 'products' %}">Products</a>
+  <a href="#contact">Contact</a>
+
+  <!-- MOBILE ACCOUNT -->
+
+  <div class="mobile-account">
+
+    <div id="mobileAccountBtn" class="mobile-account-btn">
+      Account ▾
+    </div>
+
+    <div id="mobileAccountDropdown" class="mobile-account-dropdown">
+
+      {% if user.is_authenticated %}
+
+        <div class="account-user">
+        Hi, {{ user.username }} 👋
+        </div>
+
+        {% if user.is_staff %}
+          <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+        {% else %}
+          <a href="#">Profile</a>
+        {% endif %}
+
+        <a href="#" id="logoutBtnMobile">Logout</a>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>
+
+</header>
+
+
+
+<!-- ================= HERO ================= -->
+<section id="home" class="hero-bold">
+
+  <div class="hero-bg"
+       style="background-image:url('{% static 'images/premium.png' %}')"></div>
+
+  <div class="hero-overlay"></div>
+
+  <div class="hero-content">
+
+      <h1>
+        Pure Food.<br>
+        <span>Honest Origins</span>
+      </h1>
+
+      <p class="hero-sub">
+        Wholesome millets and spices grown by Indian farmers and prepared
+        with traditional care for everyday family nutrition.
+      </p>
+
+      <div class="hero-stats">
+        <div>
+          <strong>500+</strong>
+          <span>Happy Families</span>
+        </div>
+        <div>
+          <strong>20+</strong>
+          <span>Natural Products</span>
+        </div>
+        <div>
+          <strong>10+</strong>
+          <span>Partner Farmers</span>
+        </div>
+      </div>
+
+      <div class="hero-actions">
+        <a href="{% url 'products' %}" class="btn-main">Explore Products</a>
+        <a href="#about" class="btn-outline">Our Story</a>
+      </div>
+
+  </div>
+</section>
+
+<!-- ================= ABOUT SECTION ================= -->
+<section id="about" class="story-editorial">
+
+  <div class="story-image"></div>
+
+  <div class="story-text">
+
+    <span class="story-tag">OUR HERITAGE</span>
+
+    <h2>Rooted in Farms.<br>Crafted for Families.</h2>
+
+    <p>
+      Subio Foods began with a simple promise — honest food from honest farms.
+      We partner directly with Indian farmers, carefully sourcing millets and spices,
+      and preparing them hygienically using traditional wisdom.
+    </p>
+
+    <p class="muted">
+      Every product reflects purity, transparency, and generations of nourishment —
+      created for modern everyday wellness.
+    </p>
+
+    <div class="story-signature">
+  Crafted with care. Rooted in tradition.
+</div>
+
+  </div>
+
+</section>
+
+<!-- ================= PRODUCTS Type ================= -->
+<section id="products" class="alt-products">
+
+  <h2 class="alt-title">Our Product Categories</h2>
+
+  <!-- Millets -->
+  <div class="alt-row animate">
+    <img src="{% static 'images/millets.png' %}">
+    <div class="alt-content">
+      <h3>Millets</h3>
+      <p>Wholesome ancient grains rich in fiber, minerals, and natural goodness.</p>
+      <a href="#featured" class="alt-btn">Shop Now</a>
+    </div>
+  </div>
+
+  <!-- Spices -->
+  <div class="alt-row reverse animate">
+    <img src="{% static 'images/spices.png' %}">
+    <div class="alt-content">
+      <h3>Spices</h3>
+      <p>Freshly sourced and cold-ground to preserve aroma and authentic flavor.</p>
+      <a href="#featured" class="alt-btn">Shop Now</a>
+    </div>
+  </div>
+
+  <!-- Masalas -->
+  <div class="alt-row animate">
+    <img src="{% static 'images/masalas.png' %}">
+    <div class="alt-content">
+      <h3>Masalas</h3>
+      <p>Traditional spice blends crafted for rich everyday Indian cooking.</p>
+      <a href="#featured" class="alt-btn">Shop Now</a>
+    </div>
+  </div>
+
+  <!-- Health Mix -->
+  <div class="alt-row reverse animate">
+    <img src="{% static 'images/healthmix.png' %}">
+    <div class="alt-content">
+      <h3>Health Mix</h3>
+      <p>Nutrient-packed blends designed for balanced family nutrition.</p>
+      <a href="#featured" class="alt-btn">Shop Now</a>
+    </div>
+  </div>
+
+</section>
+
+
+<!-- ================= PRODUCT CAROUSEL ================= -->
+<section id="featured" class="carousel-section">
+
+<h2>Discover our ready-to-cook delights</h2>
+
+<div class="carousel-viewport">
+  <div class="carousel-track" id="carousel">
+
+    <div class="carousel-item"><img src="{% static 'images/p1.png' %}"></div>
+    <div class="carousel-item"><img src="{% static 'images/p2.png' %}"></div>
+    <div class="carousel-item"><img src="{% static 'images/p3.png' %}"></div>
+    <div class="carousel-item"><img src="{% static 'images/p4.png' %}"></div>
+    <div class="carousel-item"><img src="{% static 'images/p5.png' %}"></div>
+    <div class="carousel-item"><img src="{% static 'images/p6.png' %}"></div>
+    <div class="carousel-item"><img src="{% static 'images/p7.png' %}"></div>
+
+  </div>
+</div>
+
+<!-- DOTS -->
+<div id="carouselDots" class="dots"></div>
+
+</section>
+
+<!-- ================= HOW IT’S MADE ================= -->
+<section class="process-classic">
+
+<h2 class="process-heading">From Farm to Fork</h2>
+
+<div class="process-flow">
+
+<div class="flow-item animate">
+<span>01</span>
+<h3>Farmer Sourcing</h3>
+<p>Direct partnerships with trusted farmers growing naturally.</p>
+</div>
+
+<div class="flow-item animate">
+<span>02</span>
+<h3>Hygienic Processing</h3>
+<p>Clean facilities ensuring purity and quality.</p>
+</div>
+
+<div class="flow-item animate">
+<span>03</span>
+<h3>Cold Grinding</h3>
+<p>Traditional grinding preserving nutrients and aroma.</p>
+</div>
+
+<div class="flow-item animate">
+<span>04</span>
+<h3>Safe Packaging</h3>
+<p>Carefully packed to reach your home fresh.</p>
+</div>
+
+</div>
+
+<div class="flow-line"></div>
+
+</section>
+<!-- ================= Where to buy ================= -->
+<section class="where-buy animate">
+
+<h2>Where To <span>Buy</span></h2>
+
+<div class="buy-row">
+
+<div class="buy-item">
+<strong>Right Here<br>Right Now</strong>
+</div>
+
+<div class="divider"></div>
+
+<div class="buy-item" href="https://www.amazon.in/s?k=subio&crid=2IFJ1PC9SAGCN&sprefix=subi%2Caps%2C497&ref=nb_sb_noss_2" target="_blank">
+<img src="{% static 'images/amazon.png' %}">
+</div>
+
+<div class="divider"></div>
+
+<div class="buy-item">
+<img src="{% static 'images/flipkart.png' %}">
+</div>
+
+</div>
+
+</section>
+<!-- ================= WHY SECTION ================= -->
+<section class="why-editorial-split">
+
+  <div class="why-left">
+    <h2>Why Subio Foods</h2>
+    <p>
+      Crafted with honesty, rooted in tradition, and delivered with care —
+      every product reflects our commitment to your family’s wellbeing.
+    </p>
+  </div>
+
+  <div class="why-right">
+
+    <div class="why-line animate">
+      <strong>100% Natural</strong>
+      <span>Pure ingredients, no artificial processing</span>
+    </div>
+
+    <div class="why-line animate">
+      <strong>Hygienic Manufacturing</strong>
+      <span>Handled in clean, certified facilities</span>
+    </div>
+
+    <div class="why-line animate">
+      <strong>Farmer Direct</strong>
+      <span>Sourced directly from trusted rural farmers</span>
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ================= TRUST BADGES ================= -->
+<section class="trust-classic animate">
+
+  <h2>Trusted Quality</h2>
+
+  <div class="trust-row">
+
+    <div class="trust-item">
+      <img src="{% static 'images/icons/fssai.png' %}" alt="FSSAI">
+      <span>FSSAI Certified</span>
+    </div>
+
+    <div class="trust-item">
+      <img src="{% static 'images/icons/delivery.png' %}" alt="Delivery">
+      <span>Fast Delivery</span>
+    </div>
+
+    <div class="trust-item">
+      <img src="{% static 'images/icons/nopre.png' %}" alt="No Preservatives">
+      <span>No Preservatives</span>
+    </div>
+
+    <div class="trust-item">
+      <img src="{% static 'images/icons/rating.png' %}" alt="Rating">
+      <span>Customer Rating</span>
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ================= CUSTOMER FEEDBACK ================= -->
+<section class="feedback-classic">
+
+<h2 class="classic-title">Words From Our Customers</h2>
+
+<div class="classic-feedback-grid">
+
+<div class="classic-card">
+  <div class="classic-stars">★★★★★</div>
+  <p>Very fresh millets. My kids love ragi malt. Truly natural taste.</p>
+  <span>Anitha</span>
+</div>
+
+<div class="classic-card">
+  <div class="classic-stars">★★★★★</div>
+  <p>Spices aroma is excellent. Feels homemade and pure.</p>
+  <span>Ravi</span>
+</div>
+
+<div class="classic-card">
+  <div class="classic-stars">★★★★★</div>
+  <p>Affordable price with premium quality. Highly recommended.</p>
+  <span>Suma</span>
+</div>
+
+</div>
+
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+
+<div class="footer-inner">
+
+<!-- BRAND -->
+
+<div class="footer-col brand">
+
+  <div class="brand-row">
+    <img src="{% static 'images/subio.png' %}" alt="Subio Foods Logo" class="footer-logo">
+  </div>
+
+  <p class="brand-text">
+    Naturally grown millets & spices  from trusted farmers to healthy homes.
+  </p>
+
+  <div class="social">
+    <div>
+  <a href="#" style="display:inline-block;margin-right:12px;">
+    <img src="{% static 'images/facebook.png' %}" width="20">
+  </a>
+
+  <a href="#" style="display:inline-block;margin-right:12px;">
+    <img src="{% static 'images/instagram.png' %}" width="20">
+  </a>
+
+  <a href="#" style="display:inline-block;">
+    <img src="{% static 'images/twitter.png' %}" width="20">
+  </a>
+</div>
+</div>
+
+</div>
+
+<!-- COMPANY -->
+
+<div class="footer-col">
+  <h4>Company</h4>
+  <a href="#about">About Us</a>
+  <a href="{% url 'products' %}">Products</a>
+  <a href="#contact">Contact</a>
+</div>
+
+<!-- SUPPORT -->
+
+<div class="footer-col">
+  <h4>Support</h4>
+  <a href="#">FAQs</a>
+  <a href="#">Shipping Policy</a>
+  <a href="#">Terms & Conditions</a>
+  <a href="#">Privacy Policy</a>
+</div>
+
+<!-- NEWSLETTER -->
+
+<div class="footer-col offers">
+
+<h4>Get Exclusive Offers</h4>
+
+<form class="offer-form" id="newsletterForm"
+      data-url="{% url 'newsletter' %}"
+      method="post">
+
+{% csrf_token %}
+
+<input type="email"
+       id="newsletterEmail"
+       name="email"
+       placeholder="Enter your email"
+       required>
+
+<button type="submit">Subscribe</button>
+
+</form>
+
+<p id="newsletterMsg"></p>
+
+<div class="contact">
+<p><strong>Contact</strong></p>
+<p>subiofoods@gmail.com</p>
+<p>+91 96068 23003</p>
+</div>
+
+</div>
+
+</div>
+
+<div class="footer-bottom">
+<p>© 2026 Subio Foods. All rights reserved.</p>
+</div>
+
+</footer>
+
+<!-- LOGOUT MODAL -->
+<div id="logoutModal" class="logout-modal">
+
+  <div class="logout-box">
+    <h3>Logout?</h3>
+    <p>Are you sure you want to logout?</p>
+
+    <div class="logout-actions">
+      <button id="cancelLogout">Cancel</button>
+      <button id="confirmLogout">Logout</button>
+    </div>
+  </div>
+
+</div>
+
+<form id="logoutForm" method="POST" action="{% url 'logout' %}">
+    {% csrf_token %}
+</form>
+
+</div>
+<!-- ================= JS ================= -->
+<script src="{% static 'js/scroll.js' %}"></script>
+<script src="{% static 'js/navbar.js' %}"></script>
+<script src="{% static 'js/mail.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</body>
+</html>
