@@ -18,12 +18,14 @@
 
   <!-- LEFT -->
   <div class="nav-left">
-    <img src="{% static 'images/subio.png' %}" class="logo-img">
+    <a href="{% url 'home' %}">
+  <img src="{% static 'images/subio.png' %}" class="logo-img">
+</a>
   </div>
 
   <!-- CENTER -->
   <nav class="nav-center">
-    <a href="#about">About</a>
+    <a href="{% url 'home' %}">About</a>
     <a href="{% url 'products' %}">Products</a>
     <a href="#contact">Contact</a>
   </nav>
@@ -76,7 +78,7 @@
 <!-- MOBILE MENU -->
 <div class="mobile-menu" id="mobileMenu">
 
-  <a href="#about">About</a>
+  <a href="{% url 'home' %}">About</a>
   <a href="{% url 'products' %}">Products</a>
   <a href="#contact">Contact</a>
 
@@ -286,7 +288,7 @@ data-weight="{{ p.net_weight|default:'0' }}">
 
 <div class="footer-col">
   <h4>Company</h4>
-  <a href="#about">About Us</a>
+  <a href="{% url 'home' %}">About Us</a>
   <a href="{% url 'products' %}">Products</a>
   <a href="#contact">Contact</a>
 </div>
