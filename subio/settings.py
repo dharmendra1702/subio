@@ -1,9 +1,10 @@
 from pathlib import Path
 import os
 import dj_database_url
-from dotenv import load_dotenv
 
-load_dotenv()
+if os.path.exists(".env"):
+    from dotenv import load_dotenv
+    load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -74,11 +75,16 @@ WSGI_APPLICATION = "subio.wsgi.application"
 # Database (Neon PostgreSQL)
 # ========================
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise Exception("DATABASE_URL not set")
+
 DATABASES = {
     "default": dj_database_url.parse(
-        os.getenv("DATABASE_URL"),
+        DATABASE_URL,
         conn_max_age=600,
-        ssl_require=True,   # IMPORTANT for Neon
+        ssl_require=True,
     )
 }
 
@@ -157,7 +163,7 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # ========================
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://your-app-name.onrender.com",
+    "https://subio-3k7w.onrender.com",
 ]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
