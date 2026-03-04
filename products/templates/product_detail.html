@@ -1,5 +1,118 @@
 {% load static %}
+{% load cart_tags %}
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/product_detail.css' %}">
+<link rel="stylesheet" href="{% static 'css/header_footer.css' %}">
+
+<header class="navbar">
+
+  <!-- LEFT -->
+  <div class="nav-left">
+    <a href="{% url 'home' %}">
+  <img src="{% static 'images/icons/logo.png' %}" class="logo-img">
+</a>
+  </div>
+
+  <!-- CENTER -->
+  <nav class="nav-center">
+    <a href="{% url 'home' %}">About</a>
+    <a href="{% url 'products' %}">Products</a>
+    <a href="#contact">Contact</a>
+  </nav>
+
+  <!-- RIGHT -->
+<div class="nav-right">
+
+  {% if not user.is_staff %}
+    <a href="{% url 'cart' %}" class="nav-cart">
+Cart ({{ cart_count|default:"0" }})
+</a>
+  {% endif %}
+
+  <!-- ACCOUNT DROPDOWN -->
+  <div class="account-wrap">
+
+    <button class="account-btn" id="accountBtn">Account</button>
+
+    <div class="account-dropdown" id="accountDropdown">
+
+      {% if user.is_authenticated %}
+
+      <div class="account-user">
+      Hi, {{ user.username }} 👋 
+      </div>
+
+      {% if user.is_staff %}
+        <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+      {% else %}
+        <a href="{% url 'profile' %}">Profile</a>
+
+        <a href="{% url 'orders' %}">My Orders</a>
+      {% endif %}
+
+      <a href="#" id="logoutBtn">Logout</a>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+  <!-- mobile hamburger -->
+  <div class="hamburger" id="hamburger">
+  <span></span>
+  <span></span>
+  <span></span>
+</div>
+
+</div>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+
+  <a href="{% url 'home' %}">About</a>
+  <a href="{% url 'products' %}">Products</a>
+  <a href="#contact">Contact</a> 
+
+  <!-- MOBILE ACCOUNT -->
+
+  <div class="mobile-account">
+
+    <div id="mobileAccountBtn" class="mobile-account-btn">
+      Account ▾
+    </div>
+
+    <div id="mobileAccountDropdown" class="mobile-account-dropdown">
+
+      {% if user.is_authenticated %}
+
+        <div class="account-user">
+        Hi, {{ user.username }} 👋
+        </div>
+
+        {% if user.is_staff %}
+          <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+        {% else %}
+          <a href="{% url 'profile' %}">Profile</a>
+
+          <a href="{% url 'orders' %}">My Orders</a>
+        {% endif %}
+
+        <a href="#" id="logoutBtnMobile">Logout</a>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>
+
+</header>
 
 <div class="product-wrapper">
 
@@ -9,13 +122,17 @@
 
   <div class="slider" id="slider">
 
-    <button class="arrow left" onclick="prevImg()">‹</button>
+  {% if product.images.exists %}
+    <button class="arrow left" id="prevBtn">‹</button>
+  {% endif %}
 
-    <img src="{{ product.image.url }}" class="main-img" id="mainImg">
+  <img src="{{ product.image.url }}" class="main-img" id="mainImg">
 
-    <button class="arrow right" onclick="nextImg()">›</button>
+  {% if product.images.exists %}
+    <button class="arrow right" id="nextBtn">›</button>
+  {% endif %}
 
-  </div>
+</div>
 
   <div class="thumbs" id="thumbs">
 
@@ -37,20 +154,43 @@
 
 <div class="price">₹{{ product.price }}</div>
 
-<p class="gst">Inclusive of {{ product.gst_percentage }}% GST</p>
+{% comment %} <p class="gst">Inclusive of {{ product.gst_percentage }}% GST</p> {% endcomment %}
 
-<div class="stock">
+{% comment %} <div class="stock">
 {% if product.stock > 0 %}
 In Stock ({{ product.stock }})
 {% else %}
 Out of Stock
 {% endif %}
-</div>
+</div> {% endcomment %}
 
-<form method="POST" action="/cart/">
-{% csrf_token %}
-<input type="hidden" name="product_id" value="{{ product.id }}">
-<button class="cart-btn">Add To Cart</button>
+<form class="add-to-cart-form">
+    {% csrf_token %}
+    <input type="hidden" name="product_id" value="{{ product.id }}">
+
+    <div class="cart-control">
+
+      {% with cart_item=cart|get_item:product.id %}
+    {% if cart_item %}
+        <button type="button" class="add-btn" style="display:none;">Add</button>
+
+        <div class="qty-box" style="display:flex;">
+            <button type="button" class="minus">−</button>
+            <span class="qty">{{ cart_item.quantity }}</span>
+            <button type="button" class="plus">+</button>
+        </div>
+    {% else %}
+        <button type="button" class="add-btn">Add</button>
+
+        <div class="qty-box" style="display:none;">
+            <button type="button" class="minus">−</button>
+            <span class="qty">1</span>
+            <button type="button" class="plus">+</button>
+        </div>
+    {% endif %}
+{% endwith %}
+
+    </div>
 </form>
 
 <!-- HIGHLIGHTS -->
@@ -89,7 +229,7 @@ Out of Stock
 
 <span>Shelf Life</span><span>{{ product.shelf_life|default:"—" }}</span>
 
-<span>GST</span><span>{{ product.gst_percentage }}%</span>
+{% comment %} <span>GST</span><span>{{ product.gst_percentage }}%</span> {% endcomment %}
 
 </div>
 
@@ -124,8 +264,128 @@ Out of Stock
 
 </div>
 
-<script>
 
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+
+<div class="footer-inner">
+
+<!-- BRAND -->
+
+<div class="footer-col brand">
+
+  <div class="brand-row">
+    <img src="{% static 'images/icons/logo.png' %}" alt="Subio Foods Logo" class="footer-logo">
+  </div>
+
+  <p class="brand-text">
+    Naturally grown millets & spices  from trusted farmers to healthy homes.
+  </p>
+
+  <div class="social">
+    <div>
+  <a href="#" style="display:inline-block;margin-right:12px;">
+    <img src="{% static 'images/facebook.png' %}" width="20">
+  </a>
+
+  <a href="#" style="display:inline-block;margin-right:12px;">
+    <img src="{% static 'images/instagram.png' %}" width="20">
+  </a>
+
+  <a href="#" style="display:inline-block;">
+    <img src="{% static 'images/twitter.png' %}" width="20">
+  </a>
+</div>
+</div>
+
+</div>
+
+<!-- COMPANY -->
+
+<div class="footer-col">
+  <h4>Company</h4>
+  <a href="{% url 'home' %}">About Us</a>
+  <a href="{% url 'products' %}">Products</a>
+  <a href="#contact">Contact</a>
+</div>
+
+<!-- SUPPORT -->
+
+<div class="footer-col">
+  <h4>Support</h4>
+  <a href="#">FAQs</a>
+  <a href="#">Shipping Policy</a>
+  <a href="#">Terms & Conditions</a>
+  <a href="#">Privacy Policy</a>
+</div>
+
+<!-- NEWSLETTER -->
+
+<div class="footer-col offers">
+
+<h4>Get Exclusive Offers</h4>
+
+<form class="offer-form" id="newsletterForm"
+      data-url="{% url 'newsletter' %}"
+      method="post">
+
+{% csrf_token %}
+
+<input type="email"
+       id="newsletterEmail"
+       name="email"
+       placeholder="Enter your email"
+       required>
+
+<button type="submit">Subscribe</button>
+
+</form>
+
+<p id="newsletterMsg"></p>
+
+<div class="contact">
+<p><strong>Contact</strong></p>
+<p>subiofoods@gmail.com</p>
+<p>+91 96068 23003</p>
+</div>
+
+</div>
+
+</div>
+
+<div class="footer-bottom">
+<p>© 2026 Subio Foods. All rights reserved.</p>
+</div>
+
+</footer>
+
+<!-- LOGOUT MODAL -->
+<div id="logoutModal" class="logout-modal">
+
+  <div class="logout-box">
+    <h3>Logout?</h3>
+    <p>Are you sure you want to logout?</p>
+
+    <div class="logout-actions">
+      <button id="cancelLogout">Cancel</button>
+      <button id="confirmLogout">Logout</button>
+    </div>
+  </div>
+
+</div>
+
+<form id="logoutForm" method="POST" action="{% url 'logout' %}">
+    {% csrf_token %}
+</form>
+
+
+
+<script src="{% static 'js/navbar.js' %}"></script>
+<script src="{% static 'js/scroll.js' %}"></script>
+<script src="{% static 'js/shop.js' %}"></script>
+<script src="{% static 'js/cart.js' %}"></script>
+<script>
+const ADD_TO_CART_URL = "{% url 'add_to_cart' %}";
 const mainImg = document.getElementById("mainImg");
 const slider = document.getElementById("slider");
 const thumbs = document.querySelectorAll(".thumb");
@@ -181,6 +441,40 @@ function tab(id,btn){
   document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
   btn.classList.add("active");
   document.getElementById(id).classList.add("active");
+}
+
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+
+if(prevBtn) {
+  prevBtn.addEventListener("click", prevImg);
+}
+
+if(nextBtn) {
+  nextBtn.addEventListener("click", nextImg);
+}
+
+
+
+function showPopup(message){
+
+    const popup = document.createElement("div");
+    popup.innerText = message;
+    popup.style.position = "fixed";
+    popup.style.bottom = "30px";
+    popup.style.right = "30px";
+    popup.style.background = "#2e7d32";
+    popup.style.color = "white";
+    popup.style.padding = "12px 20px";
+    popup.style.borderRadius = "8px";
+    popup.style.boxShadow = "0 5px 15px rgba(0,0,0,0.2)";
+    popup.style.zIndex = "9999";
+
+    document.body.appendChild(popup);
+
+    setTimeout(() => {
+        popup.remove();
+    }, 2000);
 }
 
 </script>

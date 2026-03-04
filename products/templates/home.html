@@ -21,7 +21,7 @@
   <!-- LEFT -->
   <div class="nav-left">
     <a href="{% url 'home' %}">
-  <img src="{% static 'images/subio.png' %}" class="logo-img">
+  <img src="{% static 'images/icons/logo.png' %}" class="logo-img">
 </a>
   </div>
 
@@ -36,7 +36,9 @@
 <div class="nav-right">
 
   {% if not user.is_staff %}
-    <a href="{% url 'cart' %}" class="nav-cart">Cart</a>
+    <a href="{% url 'cart' %}" class="nav-cart">
+Cart ({{ cart_count|default:"0" }})
+</a>
   {% endif %}
 
   <!-- ACCOUNT DROPDOWN -->
@@ -55,7 +57,9 @@
       {% if user.is_staff %}
         <a href="{% url 'admin_dashboard' %}">Dashboard</a>
       {% else %}
-        <a href="#">Profile</a>
+        <a href="{% url 'profile' %}">Profile</a>
+
+        <a href="{% url 'orders' %}">My Orders</a>
       {% endif %}
 
       <a href="#" id="logoutBtn">Logout</a>
@@ -103,7 +107,9 @@
         {% if user.is_staff %}
           <a href="{% url 'admin_dashboard' %}">Dashboard</a>
         {% else %}
-          <a href="#">Profile</a>
+          <a href="{% url 'profile' %}">Profile</a>
+
+        <a href="{% url 'orders' %}">My Orders</a>
         {% endif %}
 
         <a href="#" id="logoutBtnMobile">Logout</a>
@@ -208,7 +214,9 @@
     <div class="alt-content">
       <h3>Millets</h3>
       <p>Wholesome ancient grains rich in fiber, minerals, and natural goodness.</p>
-      <a href="#featured" class="alt-btn">Shop Now</a>
+      <a href="{% url 'products_by_category' 'millets' %}" class="alt-btn">
+  Shop Now
+</a>
     </div>
   </div>
 
@@ -218,7 +226,9 @@
     <div class="alt-content">
       <h3>Spices</h3>
       <p>Freshly sourced and cold-ground to preserve aroma and authentic flavor.</p>
-      <a href="#featured" class="alt-btn">Shop Now</a>
+      <a href="{% url 'products_by_category' 'spices' %}" class="alt-btn">
+  Shop Now
+</a>
     </div>
   </div>
 
@@ -228,7 +238,9 @@
     <div class="alt-content">
       <h3>Masalas</h3>
       <p>Traditional spice blends crafted for rich everyday Indian cooking.</p>
-      <a href="#featured" class="alt-btn">Shop Now</a>
+      <a href="{% url 'products_by_category' 'masalas' %}" class="alt-btn">
+  Shop Now
+</a>
     </div>
   </div>
 
@@ -238,7 +250,9 @@
     <div class="alt-content">
       <h3>Health Mix</h3>
       <p>Nutrient-packed blends designed for balanced family nutrition.</p>
-      <a href="#featured" class="alt-btn">Shop Now</a>
+      <a href="{% url 'products_by_category' 'health-mix' %}" class="alt-btn">
+  Shop Now
+</a>
     </div>
   </div>
 
@@ -438,7 +452,7 @@
 
   <div class="brand-row">
     <a href="{% url 'home' %}">
-      <img src="{% static 'images/subio.png' %}" class="logo-img" alt="Subio Foods Logo" class="footer-logo">
+      <img src="{% static 'images/icons/logo.png' %}" class="logo-img" alt="Subio Foods Logo" class="footer-logo">
     </a>
   </div>
 

@@ -72,8 +72,8 @@
 
 .nav-cart{
   text-decoration:none;
-  color:white;
   font-size:15px;
+  color: #222;
 }
 
 .navbar.scrolled .nav-cart{

@@ -1,0 +1,37 @@
+.profile-container{
+
+max-width:600px;
+margin:60px auto;
+padding:40px;
+background:#fff;
+border-radius:10px;
+box-shadow:0 10px 30px rgba(0,0,0,0.1);
+
+}
+
+.section{
+margin-bottom:30px;
+}
+
+input,select{
+
+width:100%;
+padding:12px;
+margin-top:10px;
+border:1px solid #ddd;
+border-radius:6px;
+
+}
+
+.save-btn{
+
+margin-top:20px;
+padding:14px;
+width:100%;
+background:black;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+
+}

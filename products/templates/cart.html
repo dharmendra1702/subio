@@ -1,3 +1,331 @@
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/main.css' %}">
-hlo
+<link rel="stylesheet" href="{% static 'css/cart.css' %}">
+
+<section class="cart-page">
+
+<h1 class="cart-title">🛒 Your Shopping Cart</h1>
+
+{% if cart %}
+
+<div class="cart-container">
+
+<!-- ================= CART ITEMS ================= -->
+<div class="cart-items" id="cartItems">
+
+{% for key,item in cart.items %}
+<div class="cart-card" id="item-{{key}}">
+
+<div class="cart-img">
+<img src="{{item.image}}">
+</div>
+
+<div class="cart-details">
+
+<h3>{{item.name}}</h3>
+
+<p class="price">₹{{item.price}}</p>
+
+<div class="qty-control">
+
+<button onclick="updateCart('{{key}}','decrease')">−</button>
+
+<span id="qty-{{key}}">{{item.quantity}}</span>
+
+<button onclick="updateCart('{{key}}','increase')">+</button>
+
+</div>
+
+<p class="item-total">
+₹<span id="itemtotal-{{key}}">
+{{ item.price|floatformat:2|add:"0" }}
+</span>
+</p>
+
+<a href="{% url 'remove_from_cart' key %}" class="remove-btn">
+Remove
+</a>
+
+</div>
+</div>
+{% endfor %}
+
+</div>
+
+
+<!-- ================= ORDER SUMMARY ================= -->
+
+<div class="cart-summary">
+
+<h3>Order Summary</h3>
+
+<div class="summary-row">
+<span>Subtotal</span>
+<span>₹<span id="subtotal">{{total}}</span></span>
+</div>
+
+<div class="summary-row">
+<span>Shipping</span>
+<span id="shipping">
+{% if total < 399 %}
+₹40
+{% else %}
+FREE
+{% endif %}
+</span>
+</div>
+
+<hr>
+
+<div class="summary-row total">
+<span>Total</span>
+<span>₹<span id="finalTotal">{{total}}</span></span>
+</div>
+
+<button class="checkout-btn">
+Proceed to Checkout
+</button>
+
+</div>
+
+</div>
+
+{% else %}
+
+<div class="empty-cart">
+<h2>Your cart is empty 🛒</h2>
+
+<a href="{% url 'products' %}" class="shop-btn">
+Continue Shopping
+</a>
+
+</div>
+
+{% endif %}
+
+</section>
+
+
+<!-- ================= CART DRAWER ================= -->
+
+<div id="cartOverlay" class="cart-overlay" onclick="closeDrawer()"></div>
+
+<div id="cartDrawer" class="cart-drawer">
+
+<div class="drawer-header">
+<h3>Your Cart</h3>
+<button onclick="closeDrawer()">✕</button>
+</div>
+
+<div id="drawerItems"></div>
+
+</div>
+
+
+<style>
+
+/* Drawer */
+
+.cart-overlay{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.4);
+display:none;
+z-index:2000;
+}
+
+.cart-overlay.show{
+display:block;
+}
+
+.cart-drawer{
+position:fixed;
+right:-420px;
+top:0;
+height:100%;
+width:380px;
+background:white;
+box-shadow:-10px 0 40px rgba(0,0,0,0.3);
+transition:0.35s;
+z-index:3000;
+padding:20px;
+}
+
+.cart-drawer.open{
+right:0;
+}
+
+.drawer-header{
+display:flex;
+justify-content:space-between;
+margin-bottom:20px;
+}
+
+</style>
+
+
+<script>
+
+/* ================= UPDATE CART AJAX ================= */
+
+function updateCart(productId, action){
+
+fetch("/update-cart/",{
+
+method:"POST",
+
+headers:{
+"X-CSRFToken":"{{csrf_token}}",
+"Content-Type":"application/x-www-form-urlencoded"
+},
+
+body:`product_id=${productId}&action=${action}`
+
+})
+
+.then(res=>res.json())
+
+.then(data=>{
+
+if(data.status==="success"){
+
+let cart=data.cart
+let total=data.total
+
+/* update subtotal */
+document.getElementById("subtotal").innerText=total
+document.getElementById("finalTotal").innerText=total
+
+/* shipping logic */
+
+if(total < 399){
+document.getElementById("shipping").innerText="₹40"
+document.getElementById("finalTotal").innerText = total + 40
+}
+else{
+document.getElementById("shipping").innerText="FREE"
+}
+
+/* update quantity */
+
+if(cart[productId]){
+
+document.getElementById("qty-"+productId).innerText=cart[productId].quantity
+
+let price = cart[productId].price
+let qty = cart[productId].quantity
+
+document.getElementById("itemtotal-"+productId).innerText = (price*qty).toFixed(2)
+
+}
+else{
+
+document.getElementById("item-"+productId).remove()
+
+}
+
+}
+
+})
+
+}
+
+
+/* ================= CART DRAWER ================= */
+
+function openDrawer(){
+
+document.getElementById("cartDrawer").classList.add("open")
+
+document.getElementById("cartOverlay").classList.add("show")
+
+}
+
+function closeDrawer(){
+
+document.getElementById("cartDrawer").classList.remove("open")
+
+document.getElementById("cartOverlay").classList.remove("show")
+
+}
+
+let cartBusy = false;
+
+function updateCart(productId, action){
+
+if(cartBusy) return;
+cartBusy = true;
+
+let qtyEl = document.getElementById("qty-"+productId)
+let itemTotalEl = document.getElementById("itemtotal-"+productId)
+
+let currentQty = parseInt(qtyEl.innerText)
+
+let newQty = currentQty
+
+if(action === "increase") newQty++
+if(action === "decrease") newQty--
+
+if(newQty < 0) newQty = 0
+
+/* -------- INSTANT UI UPDATE -------- */
+
+if(newQty === 0){
+document.getElementById("item-"+productId).remove()
+}else{
+qtyEl.innerText = newQty
+}
+
+/* update item price instantly */
+
+let price = parseFloat(itemTotalEl.innerText) / currentQty
+itemTotalEl.innerText = (price * newQty).toFixed(2)
+
+/* update subtotal instantly */
+
+recalculateCart()
+
+/* -------- SERVER UPDATE -------- */
+
+fetch("/update-cart/",{
+method:"POST",
+headers:{
+"X-CSRFToken":"{{csrf_token}}",
+"Content-Type":"application/x-www-form-urlencoded"
+},
+body:`product_id=${productId}&action=${action}`
+})
+.then(res=>res.json())
+.then(data=>{
+cartBusy = false
+})
+.catch(()=>{
+cartBusy = false
+})
+
+}
+
+function recalculateCart(){
+
+let subtotal = 0
+
+document.querySelectorAll(".item-total span").forEach(el=>{
+subtotal += parseFloat(el.innerText)
+})
+
+document.getElementById("subtotal").innerText = subtotal.toFixed(2)
+
+if(subtotal < 399){
+document.getElementById("shipping").innerText = "₹40"
+document.getElementById("finalTotal").innerText = (subtotal + 40).toFixed(2)
+}
+else{
+document.getElementById("shipping").innerText = "FREE"
+document.getElementById("finalTotal").innerText = subtotal.toFixed(2)
+}
+
+}
+
+</script>

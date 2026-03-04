@@ -1,3 +1,4 @@
+{% load cart_tags %}
 {% load static %}
 <!DOCTYPE html>
 <html>
@@ -19,7 +20,7 @@
   <!-- LEFT -->
   <div class="nav-left">
     <a href="{% url 'home' %}">
-  <img src="{% static 'images/subio.png' %}" class="logo-img">
+  <img src="{% static 'images/icons/logo.png' %}" class="logo-img">
 </a>
   </div>
 
@@ -34,7 +35,9 @@
 <div class="nav-right">
 
   {% if not user.is_staff %}
-    <a href="{% url 'cart' %}" class="nav-cart">Cart</a>
+    <a href="javascript:void(0)" onclick="openCart()" class="nav-cart">
+Cart (<span id="cartCount">{{ cart_count|default:"0" }}</span>)
+</a>
   {% endif %}
 
   <!-- ACCOUNT DROPDOWN -->
@@ -53,7 +56,9 @@
       {% if user.is_staff %}
         <a href="{% url 'admin_dashboard' %}">Dashboard</a>
       {% else %}
-        <a href="#">Profile</a>
+        <a href="{% url 'profile' %}">Profile</a>
+
+        <a href="{% url 'orders' %}">My Orders</a>
       {% endif %}
 
       <a href="#" id="logoutBtn">Logout</a>
@@ -101,7 +106,9 @@
         {% if user.is_staff %}
           <a href="{% url 'admin_dashboard' %}">Dashboard</a>
         {% else %}
-          <a href="#">Profile</a>
+          <a href="{% url 'profile' %}">Profile</a>
+
+          <a href="{% url 'orders' %}">My Orders</a>
         {% endif %}
 
         <a href="#" id="logoutBtnMobile">Logout</a>
@@ -126,28 +133,32 @@
 <!-- ================= CATEGORY SLIDER ================= -->
 
 <div class="category-slider">
-  <div class="category-wrapper" id="catTrack">
 
-    <!-- ALL -->
-    <div class="cat-circle active" onclick="filterCat('all',this)">
-      <img src="{% static 'images/all.png' %}" loading="lazy">
+  <!-- ALL -->
+  <div class="cat-circle {% if active_category == 'all' %}active{% endif %}">
+    <a href="{% url 'products' %}">
+      <img src="{% static 'images/all.png' %}">
       <span>All</span>
       <div class="underline"></div>
-    </div>
+    </a>
+  </div>
 
-    {% for c in categories %}
-    <div class="cat-circle" onclick="filterCat('{{ c.id }}',this)">
+  {% for c in categories %}
+  <div class="cat-circle {% if active_category == c.slug %}active{% endif %}">
+    <a href="{% url 'products_by_category' c.slug %}">
+
       {% if c.image %}
-        <img src="{{ c.image.url }}" loading="lazy" width="90" height="90">
+        <img src="{{ c.image.url }}">
       {% else %}
-        <img src="{% static 'images/all.png' %}" loading="lazy">
+        <img src="{% static 'images/all.png' %}">
       {% endif %}
+
       <span>{{ c.name }}</span>
       <div class="underline"></div>
-    </div>
-    {% endfor %}
-
+    </a>
   </div>
+  {% endfor %}
+
 </div>
 
 <!-- ================= FILTER | SEARCH | SORT ================= -->
@@ -211,7 +222,8 @@
 data-name="{{ p.name|lower }}"
 data-price="{{ p.price }}"
 data-cat="{{ p.category.id }}"
-data-weight="{{ p.net_weight|default:'0' }}">
+data-weight="{{ p.net_weight|default:'' }}"
+data-stock="{{ p.stock }}">
 
 <span class="heart" onclick="wish(this)">♡</span>
 
@@ -232,10 +244,33 @@ data-weight="{{ p.net_weight|default:'0' }}">
 
 <a href="{% url 'product_detail' p.id %}" class="view">View</a>
 
-<form method="POST" action="{% url 'cart' %}">
-{% csrf_token %}
-<input type="hidden" name="product_id" value="{{ p.id }}">
-<button class="cart">Cart</button>
+<form class="add-to-cart-form">
+    {% csrf_token %}
+    <input type="hidden" name="product_id" value="{{ p.id }}">
+
+    <div class="cart-control">
+
+       {% with cart_item=cart|get_item:p.id %}
+    {% if cart_item %}
+        <button type="button" class="add-btn" style="display:none;">Add</button>
+
+        <div class="qty-box" style="display:flex;">
+            <button type="button" class="minus">−</button>
+            <span class="qty">{{ cart_item.quantity }}</span>
+            <button type="button" class="plus">+</button>
+        </div>
+    {% else %}
+        <button type="button" class="add-btn">Add</button>
+
+        <div class="qty-box" style="display:none;">
+            <button type="button" class="minus">−</button>
+            <span class="qty">1</span>
+            <button type="button" class="plus">+</button>
+        </div>
+    {% endif %}
+{% endwith %}
+
+    </div>
 </form>
 
 </div>
@@ -259,7 +294,7 @@ data-weight="{{ p.net_weight|default:'0' }}">
 <div class="footer-col brand">
 
   <div class="brand-row">
-    <img src="{% static 'images/subio.png' %}" alt="Subio Foods Logo" class="footer-logo">
+    <img src="{% static 'images/icons/logo.png' %}" alt="Subio Foods Logo" class="footer-logo">
   </div>
 
   <p class="brand-text">
@@ -363,9 +398,60 @@ data-weight="{{ p.net_weight|default:'0' }}">
 </form>
 
 </div>
+
+<!-- CART DRAWER -->
+<div id="cartOverlay" class="cart-overlay" onclick="closeCart()"></div>
+
+<div id="cartDrawer" class="cart-drawer">
+
+<div class="drawer-header">
+<h3>Your Cart</h3>
+<button onclick="closeCart()">✕</button>
+</div>
+
+<div id="drawerItems"></div>
+
+<div class="drawer-footer">
+<div class="drawer-total">
+Total: ₹<span id="drawerTotal">0</span>
+</div>
+
+<a href="{% url 'cart' %}" class="view-cart-btn">
+View Cart
+</a>
+</div>
+
+</div>
+
 <script src="{% static 'js/navbar.js' %}"></script>
 <script src="{% static 'js/scroll.js' %}"></script>
 <script src="{% static 'js/shop.js' %}"></script>
+<script src="{% static 'js/cart.js' %}"></script>
+
+<script>
+const ADD_TO_CART_URL = "{% url 'add_to_cart' %}";
+
+function showPopup(message){
+
+    const popup = document.createElement("div");
+    popup.innerText = message;
+    popup.style.position = "fixed";
+    popup.style.bottom = "30px";
+    popup.style.right = "30px";
+    popup.style.background = "#2e7d32";
+    popup.style.color = "white";
+    popup.style.padding = "12px 20px";
+    popup.style.borderRadius = "8px";
+    popup.style.boxShadow = "0 5px 15px rgba(0,0,0,0.2)";
+    popup.style.zIndex = "9999";
+
+    document.body.appendChild(popup);
+
+    setTimeout(() => {
+        popup.remove();
+    }, 2000);
+}
+</script>
 
 </body>
 </html>

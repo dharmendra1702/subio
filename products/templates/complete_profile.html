@@ -1,0 +1,52 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'css/complete_profile.css' %}">
+
+<div class="profile-container">
+
+<h2>Complete Your Profile</h2>
+
+<form method="POST">
+
+{% csrf_token %}
+
+<div class="section">
+
+<h3>Personal Details</h3>
+
+<input type="text" name="name" placeholder="Full Name" required>
+
+<input type="tel" name="phone" placeholder="Phone Number" required>
+
+</div>
+
+
+<div class="section">
+
+<h3>Add Address</h3>
+
+<input type="text" name="house" placeholder="House / Flat / Building" required>
+
+<input type="text" name="street" placeholder="Street / Area">
+
+<input type="text" name="city" placeholder="City">
+
+<input type="text" name="state" placeholder="State">
+
+<input type="text" name="pincode" placeholder="Pincode">
+
+<select name="label">
+<option value="home">Home</option>
+<option value="work">Work</option>
+<option value="other">Other</option>
+</select>
+
+</div>
+
+<button type="submit" class="save-btn">
+Save Profile
+</button>
+
+</form>
+
+</div>

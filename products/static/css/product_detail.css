@@ -369,3 +369,92 @@ opacity:1;
 .arrow{display:none;}
 .main-img{max-height:300px;}
 }
+
+/* ===== SLIDER ARROWS PREMIUM STYLE ===== */
+
+.arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.3s ease;
+  backdrop-filter: blur(4px);
+}
+
+.arrow:hover {
+  background: black;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.arrow.left {
+  left: 12px;
+}
+
+.arrow.right {
+  right: 12px;
+}
+
+.slider {
+  position: relative;
+}
+
+.arrow {
+  opacity: 0;
+  transition: 0.3s ease;
+}
+
+.slider:hover .arrow {
+  opacity: 1;
+}
+
+.cart-control {
+    position: relative;
+    width: 120px;
+}
+
+.add-btn {
+    width: 100%;
+    padding: 12px 0;
+    border: none;
+    border-radius: 25px;
+    background: #f1f1f1;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.add-btn:hover {
+    background: #e0e0e0;
+}
+
+.qty-box {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    background: #f1f1f1;
+    border-radius: 25px;
+    padding: 10px 10px;
+}
+
+.qty-box button {
+    border: none;
+    background: transparent;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 30px;
+}
+
+.qty {
+    font-weight: 600;
+}

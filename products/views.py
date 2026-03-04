@@ -1,5 +1,3 @@
-from itertools import product
-
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
@@ -7,7 +5,13 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 
 def home(request):
-    return render(request, "home.html")
+    categories = Category.objects.all()
+    cart = request.session.get("cart", {})
+
+    return render(request, "home.html", {
+        "categories": categories,
+        "cart_count": sum(item["quantity"] for item in cart.values())
+    })
 
 
 
@@ -33,8 +37,8 @@ def login_page(request):
                 password=password
             )
 
-            login(request, user)  # auto login after signup
-            return redirect("/")
+            login(request, user)
+            return redirect("complete_profile")
 
         # LOGIN
         if action == "login":
@@ -57,10 +61,6 @@ def login_page(request):
                 return render(request,"login_signup.html",{"error":"Invalid credentials"})
 
     return render(request,"login_signup.html")
-
-@login_required(login_url="/login/")
-def cart(request):
-    return render(request, "cart.html")
 
 
 from django.views.decorators.http import require_POST
@@ -325,18 +325,407 @@ def inline_add_product(request,cat_id):
     )
     return redirect("categories_admin")
 
-# <===================user products==================>
+
+# <=================== USER PRODUCTS ==================>
+
 def products(request):
     products = Product.objects.all()
     categories = Category.objects.all()
+    cart = request.session.get("cart", {})
 
     return render(request, "products.html", {
         "products": products,
-        "categories": categories
+        "categories": categories,
+        "cart": cart,
+        "active_category": "all"   # 👈 important
+    })
+
+def products_by_category(request, slug):
+    category = get_object_or_404(Category, slug=slug)
+
+    products = Product.objects.filter(category=category)
+    categories = Category.objects.all()
+    cart = request.session.get("cart", {})
+
+    return render(request, "products.html", {
+        "products": products,
+        "categories": categories,
+        "cart": cart,
+        "active_category": category.slug
+    })
+
+def product_detail(request, id):
+    product = get_object_or_404(Product, id=id)
+    cart = request.session.get("cart", {})
+
+    return render(request, "product_detail.html", {
+        "product": product,
+        "cart": cart
     })
 
 
-def product_detail(request,id):
-    product=get_object_or_404(Product,id=id)
-    return render(request,"product_detail.html",{"product":product})
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import Product
 
+
+@require_POST
+def add_to_cart(request):
+
+    product_id = request.POST.get("product_id")
+
+    if not product_id:
+        return JsonResponse({"status": "error"})
+
+    product = get_object_or_404(Product, id=product_id)
+
+    cart = request.session.get("cart", {})
+
+    product_id = str(product_id)
+
+    if product_id in cart:
+        cart[product_id]["quantity"] += 1
+    else:
+        cart[product_id] = {
+            "name": product.name,
+            "price": float(product.price),
+            "image": product.image.url if product.image else "",
+            "quantity": 1,
+        }
+
+    request.session["cart"] = cart
+
+    return JsonResponse({
+        "status": "success",
+        "quantity": cart[product_id]["quantity"],
+        "cart_count": sum(item["quantity"] for item in cart.values())
+    })
+
+
+def cart_view(request):
+    cart = request.session.get("cart", {})
+    total = sum(item["price"] * item["quantity"] for item in cart.values())
+
+    return render(request, "cart.html", {
+        "cart": cart,
+        "total": total
+    })
+
+
+def remove_from_cart(request, product_id):
+    cart = request.session.get("cart", {})
+
+    if str(product_id) in cart:
+        del cart[str(product_id)]
+
+    request.session["cart"] = cart
+    request.session.modified = True
+
+    return redirect("cart")
+
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from .models import Product
+
+
+@require_POST
+def update_cart_quantity(request):
+
+    product_id = request.POST.get("product_id")
+    action = request.POST.get("action")
+
+    cart = request.session.get("cart", {})
+
+    if product_id not in cart:
+        return JsonResponse({"status": "error"})
+
+    if action == "increase":
+        cart[product_id]["quantity"] += 1
+
+    elif action == "decrease":
+        cart[product_id]["quantity"] -= 1
+
+        if cart[product_id]["quantity"] <= 0:
+            del cart[product_id]
+
+    request.session["cart"] = cart
+
+    total = sum(i["price"] * i["quantity"] for i in cart.values())
+
+    return JsonResponse({
+        "status": "success",
+        "cart": cart,
+        "total": total,
+        "cart_count": sum(i["quantity"] for i in cart.values())
+    })
+
+def cart_json(request):
+
+    cart=request.session.get("cart",{})
+
+    items=[]
+    total=0
+
+    for key,item in cart.items():
+
+        subtotal=item["price"]*item["quantity"]
+
+        items.append({
+            "name":item["name"],
+            "price":item["price"],
+            "quantity":item["quantity"],
+            "image":item["image"]
+        })
+
+        total+=subtotal
+
+    return JsonResponse({
+        "items":items,
+        "total":total
+    })
+
+from .models import UserProfile, Address
+from django.contrib.auth.decorators import login_required
+
+
+@login_required
+def complete_profile(request):
+
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+
+        profile.full_name = request.POST["name"]
+        profile.phone = request.POST["phone"]
+        profile.save()
+
+        Address.objects.create(
+            user=request.user,
+            name=request.POST["name"],
+            phone=request.POST["phone"],
+            house=request.POST["house"],
+            street=request.POST["street"],
+            city=request.POST["city"],
+            state=request.POST["state"],
+            pincode=request.POST["pincode"],
+            label=request.POST["label"],
+            is_default=True
+        )
+
+        return redirect("home")
+
+    return render(request,"complete_profile.html")
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
+from .models import UserProfile, Address, MobileNumber
+
+
+# ================= PROFILE PAGE =================
+
+@login_required
+def profile(request):
+
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+    addresses = Address.objects.filter(user=request.user)
+    mobiles = MobileNumber.objects.filter(user=request.user)
+
+    primary_mobile = mobiles.filter(is_primary=True).first()
+    primary_mobile = primary_mobile.mobile if primary_mobile else ""
+
+    return render(request, "profile.html", {
+        "profile": profile,
+        "extra_addresses": addresses,
+        "extra_mobiles": mobiles,
+        "primary_mobile": primary_mobile,
+        "user": request.user
+    })
+
+
+# ================= UPDATE PROFILE =================
+
+@login_required
+def update_profile(request):
+
+    if request.method == "POST":
+
+        user = request.user
+
+        user.first_name = request.POST.get("first_name", "")
+        user.last_name = request.POST.get("last_name", "")
+        user.email = request.POST.get("email", "")
+        user.username = request.POST.get("username", user.username)
+
+        user.save()
+
+        profile, created = UserProfile.objects.get_or_create(user=user)
+
+        profile.gender = request.POST.get("gender")
+        profile.date_of_birth = request.POST.get("date_of_birth") or None
+
+        profile.save()
+
+    return redirect("profile")
+
+
+# ================= PROFILE PHOTO =================
+
+@login_required
+def update_profile_photo(request):
+
+    if request.method == "POST":
+
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+        if "profile_photo" in request.FILES:
+            profile.profile_photo = request.FILES["profile_photo"]
+            profile.save()
+
+    return redirect("profile")
+
+
+# ================= ADD ADDRESS =================
+
+@login_required
+def add_extra_address(request):
+
+    if request.method == "POST":
+
+        label = request.POST.get("label")
+        address = request.POST.get("address")
+
+        if not address:
+            return JsonResponse({"error": "Address required"})
+
+        addr = Address.objects.create(
+            user=request.user,
+            label=label,
+            address=address
+        )
+
+        return JsonResponse({
+            "id": addr.id,
+            "label": addr.label,
+            "address": addr.address,
+            "is_default": addr.is_default
+        })
+
+    return JsonResponse({"error": "Invalid request"})
+
+
+# ================= DELETE ADDRESS =================
+
+@login_required
+def delete_extra_address(request, id):
+
+    Address.objects.filter(id=id, user=request.user).delete()
+
+    return JsonResponse({"success": True})
+
+
+# ================= MAKE DEFAULT ADDRESS =================
+
+@login_required
+def make_default_address(request, id):
+
+    Address.objects.filter(user=request.user).update(is_default=False)
+
+    addr = Address.objects.get(id=id, user=request.user)
+    addr.is_default = True
+    addr.save()
+
+    return JsonResponse({"success": True})
+
+
+# ================= ADD MOBILE =================
+
+@login_required
+def add_extra_mobile(request):
+
+    if request.method == "POST":
+
+        mobile = request.POST.get("mobile")
+
+        if not mobile or len(mobile) != 10:
+            return JsonResponse({"error": "Invalid mobile number"})
+
+        mob = MobileNumber.objects.create(
+            user=request.user,
+            mobile=mobile
+        )
+
+        return JsonResponse({
+            "id": mob.id,
+            "mobile": mob.mobile,
+            "is_primary": mob.is_primary
+        })
+
+    return JsonResponse({"error": "Invalid request"})
+
+
+# ================= DELETE MOBILE =================
+
+@login_required
+def delete_extra_mobile(request, id):
+
+    MobileNumber.objects.filter(id=id, user=request.user).delete()
+
+    return JsonResponse({"success": True})
+
+
+# ================= MAKE PRIMARY MOBILE =================
+
+@login_required
+def make_primary_mobile(request, id):
+
+    MobileNumber.objects.filter(user=request.user).update(is_primary=False)
+
+    mob = MobileNumber.objects.get(id=id, user=request.user)
+    mob.is_primary = True
+    mob.save()
+
+    return JsonResponse({"success": True})
+
+
+# ================= PASSWORD VERIFY =================
+
+@login_required
+def verify_username_password(request):
+
+    if request.method == "POST":
+
+        password = request.POST.get("password")
+
+        if request.user.check_password(password):
+            return JsonResponse({"success": True})
+
+        return JsonResponse({
+            "success": False,
+            "message": "Incorrect password"
+        })
+
+    return JsonResponse({"success": False})
+
+
+@login_required
+def verify_email_password(request):
+
+    if request.method == "POST":
+
+        password = request.POST.get("password")
+
+        if request.user.check_password(password):
+            return JsonResponse({"success": True})
+
+        return JsonResponse({
+            "success": False,
+            "message": "Incorrect password"
+        })
+
+    return JsonResponse({"success": False})
+
+@login_required
+def orders(request):
+    return render(request,"orders.html")    
