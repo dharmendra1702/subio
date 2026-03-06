@@ -337,6 +337,7 @@ def products(request):
         "products": products,
         "categories": categories,
         "cart": cart,
+        "cart_count": get_cart_count(request),
         "active_category": "all"   # 👈 important
     })
 
@@ -351,6 +352,7 @@ def products_by_category(request, slug):
         "products": products,
         "categories": categories,
         "cart": cart,
+        "cart_count": get_cart_count(request),
         "active_category": category.slug
     })
 
@@ -364,44 +366,39 @@ def product_detail(request, id):
     })
 
 
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from .models import Product
-
-
 @require_POST
-def add_to_cart(request):
+def update_cart(request):
 
-    product_id = request.POST.get("product_id")
-
-    if not product_id:
-        return JsonResponse({"status": "error"})
+    product_id = str(request.POST.get("product_id"))
+    action = request.POST.get("action")
 
     product = get_object_or_404(Product, id=product_id)
 
     cart = request.session.get("cart", {})
 
-    product_id = str(product_id)
-
-    if product_id in cart:
-        cart[product_id]["quantity"] += 1
-    else:
-        cart[product_id] = {
+    if action == "add":
+        cart.setdefault(product_id,{
             "name": product.name,
             "price": float(product.price),
             "image": product.image.url if product.image else "",
-            "quantity": 1,
-        }
+            "quantity":0
+        })
+        cart[product_id]["quantity"] += 1
+
+    elif action == "increase":
+        if product_id in cart:
+            cart[product_id]["quantity"] += 1
+
+    elif action == "decrease":
+        if product_id in cart:
+            cart[product_id]["quantity"] -= 1
+            if cart[product_id]["quantity"] <= 0:
+                del cart[product_id]
 
     request.session["cart"] = cart
+    request.session.modified = True
 
-    return JsonResponse({
-        "status": "success",
-        "quantity": cart[product_id]["quantity"],
-        "cart_count": sum(item["quantity"] for item in cart.values())
-    })
-
+    return JsonResponse({"status":"ok"})
 
 def cart_view(request):
     cart = request.session.get("cart", {})
@@ -424,42 +421,7 @@ def remove_from_cart(request, product_id):
 
     return redirect("cart")
 
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from .models import Product
 
-
-@require_POST
-def update_cart_quantity(request):
-
-    product_id = request.POST.get("product_id")
-    action = request.POST.get("action")
-
-    cart = request.session.get("cart", {})
-
-    if product_id not in cart:
-        return JsonResponse({"status": "error"})
-
-    if action == "increase":
-        cart[product_id]["quantity"] += 1
-
-    elif action == "decrease":
-        cart[product_id]["quantity"] -= 1
-
-        if cart[product_id]["quantity"] <= 0:
-            del cart[product_id]
-
-    request.session["cart"] = cart
-
-    total = sum(i["price"] * i["quantity"] for i in cart.values())
-
-    return JsonResponse({
-        "status": "success",
-        "cart": cart,
-        "total": total,
-        "cart_count": sum(i["quantity"] for i in cart.values())
-    })
 
 def cart_json(request):
 
@@ -473,6 +435,7 @@ def cart_json(request):
         subtotal=item["price"]*item["quantity"]
 
         items.append({
+            "id":key,
             "name":item["name"],
             "price":item["price"],
             "quantity":item["quantity"],
@@ -556,7 +519,12 @@ def update_profile(request):
         user.first_name = request.POST.get("first_name", "")
         user.last_name = request.POST.get("last_name", "")
         user.email = request.POST.get("email", "")
-        user.username = request.POST.get("username", user.username)
+        username = request.POST.get("username")
+
+        if username and User.objects.exclude(id=user.id).filter(username=username).exists():
+            return redirect("profile")
+
+        user.username = username
 
         user.save()
 
@@ -617,17 +585,32 @@ def add_extra_address(request):
 
 # ================= DELETE ADDRESS =================
 
+from django.views.decorators.http import require_POST
+
 @login_required
+@require_POST
 def delete_extra_address(request, id):
 
-    Address.objects.filter(id=id, user=request.user).delete()
+    try:
+        addr = Address.objects.get(id=id, user=request.user)
 
-    return JsonResponse({"success": True})
+        if addr.is_default:
+            return JsonResponse({"success": False, "error": "Cannot delete default address"})
+
+        addr.delete()
+
+        return JsonResponse({"success": True})
+
+    except Address.DoesNotExist:
+        return JsonResponse({"success": False})
 
 
 # ================= MAKE DEFAULT ADDRESS =================
 
+from django.views.decorators.http import require_POST
+
 @login_required
+@require_POST
 def make_default_address(request, id):
 
     Address.objects.filter(user=request.user).update(is_default=False)
@@ -641,6 +624,8 @@ def make_default_address(request, id):
 
 # ================= ADD MOBILE =================
 
+import re
+
 @login_required
 def add_extra_mobile(request):
 
@@ -648,12 +633,15 @@ def add_extra_mobile(request):
 
         mobile = request.POST.get("mobile")
 
-        if not mobile or len(mobile) != 10:
-            return JsonResponse({"error": "Invalid mobile number"})
+        if not re.match(r"^[6-9]\d{9}$", mobile):
+            return JsonResponse({"error": "Enter valid 10-digit mobile number"})
+
+        is_first = not MobileNumber.objects.filter(user=request.user).exists()
 
         mob = MobileNumber.objects.create(
             user=request.user,
-            mobile=mobile
+            mobile=mobile,
+            is_primary=is_first
         )
 
         return JsonResponse({
@@ -668,11 +656,21 @@ def add_extra_mobile(request):
 # ================= DELETE MOBILE =================
 
 @login_required
+@require_POST
 def delete_extra_mobile(request, id):
 
-    MobileNumber.objects.filter(id=id, user=request.user).delete()
+    try:
+        mob = MobileNumber.objects.get(id=id, user=request.user)
 
-    return JsonResponse({"success": True})
+        if mob.is_primary:
+            return JsonResponse({"success": False, "error": "Cannot delete primary mobile"})
+
+        mob.delete()
+
+        return JsonResponse({"success": True})
+
+    except MobileNumber.DoesNotExist:
+        return JsonResponse({"success": False})
 
 
 # ================= MAKE PRIMARY MOBILE =================
@@ -729,3 +727,7 @@ def verify_email_password(request):
 @login_required
 def orders(request):
     return render(request,"orders.html")    
+
+def get_cart_count(request):
+    cart = request.session.get("cart", {})
+    return sum(item["quantity"] for item in cart.values())

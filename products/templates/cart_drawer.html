@@ -1,0 +1,41 @@
+{% load static %}
+<!-- CART DRAWER -->
+
+<div id="cartOverlay" class="cart-overlay" onclick="closeCart()"></div>
+
+<div id="cartDrawer" class="cart-drawer">
+
+<div class="drawer-header">
+<h3>Your Cart</h3>
+<button onclick="closeCart()">✕</button>
+</div>
+
+<div id="drawerItems">
+
+<div id="emptyCart" class="empty-cart">
+
+<img src="{% static 'images/empty_cart.png' %}" alt="Empty cart">
+
+<h3>Your cart is empty</h3>
+
+<p>Add delicious items to your cart and enjoy healthy food.</p>
+
+<a href="{% url 'products' %}" class="start-shopping-btn">
+Start Shopping
+</a>
+
+</div>
+
+</div>
+
+<div class="drawer-footer">
+<div class="drawer-total">
+Total: ₹<span id="drawerTotal">0</span>
+</div>
+
+<a href="{% url 'cart' %}" class="view-cart-btn">
+View Cart
+</a>
+</div>
+
+</div>

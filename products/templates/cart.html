@@ -36,8 +36,8 @@
 </div>
 
 <p class="item-total">
-₹<span id="itemtotal-{{key}}">
-{{ item.price|floatformat:2|add:"0" }}
+₹<span id="itemtotal-{{key}}" data-price="{{item.price}}">
+{{ item.price|floatformat:2 }}
 </span>
 </p>
 
@@ -97,7 +97,6 @@ Proceed to Checkout
 <a href="{% url 'products' %}" class="shop-btn">
 Continue Shopping
 </a>
-
 </div>
 
 {% endif %}
@@ -168,9 +167,43 @@ margin-bottom:20px;
 
 <script>
 
-/* ================= UPDATE CART AJAX ================= */
-
 function updateCart(productId, action){
+
+let qtyEl = document.getElementById("qty-"+productId)
+let itemTotalEl = document.getElementById("itemtotal-"+productId)
+
+let currentQty = parseInt(qtyEl.innerText)
+
+let newQty = currentQty
+
+if(action === "increase") newQty++
+if(action === "decrease") newQty--
+
+if(newQty < 0) newQty = 0
+
+/* ---------- INSTANT UI UPDATE ---------- */
+
+if(newQty === 0){
+
+document.getElementById("item-"+productId).remove()
+
+}else{
+
+qtyEl.innerText = newQty
+
+}
+
+/* update item price instantly */
+
+let price = parseFloat(itemTotalEl.dataset.price)
+
+itemTotalEl.innerText = (price * newQty).toFixed(2)
+
+/* update totals instantly */
+
+recalculateCart()
+
+/* ---------- SERVER UPDATE (BACKGROUND) ---------- */
 
 fetch("/update-cart/",{
 
@@ -183,55 +216,35 @@ headers:{
 
 body:`product_id=${productId}&action=${action}`
 
+}).catch(()=>{})
+
+}
+
+
+/* ================= RECALCULATE TOTAL ================= */
+function recalculateCart(){
+
+let subtotal = 0
+
+document.querySelectorAll(".item-total span").forEach(el=>{
+subtotal += Number(el.innerText)
 })
 
-.then(res=>res.json())
+document.getElementById("subtotal").innerText = subtotal.toFixed(2)
 
-.then(data=>{
+if(subtotal < 399){
 
-if(data.status==="success"){
+document.getElementById("shipping").innerText = "₹40"
+document.getElementById("finalTotal").innerText = (subtotal + 40).toFixed(2)
 
-let cart=data.cart
-let total=data.total
+}else{
 
-/* update subtotal */
-document.getElementById("subtotal").innerText=total
-document.getElementById("finalTotal").innerText=total
-
-/* shipping logic */
-
-if(total < 399){
-document.getElementById("shipping").innerText="₹40"
-document.getElementById("finalTotal").innerText = total + 40
-}
-else{
-document.getElementById("shipping").innerText="FREE"
-}
-
-/* update quantity */
-
-if(cart[productId]){
-
-document.getElementById("qty-"+productId).innerText=cart[productId].quantity
-
-let price = cart[productId].price
-let qty = cart[productId].quantity
-
-document.getElementById("itemtotal-"+productId).innerText = (price*qty).toFixed(2)
-
-}
-else{
-
-document.getElementById("item-"+productId).remove()
+document.getElementById("shipping").innerText = "FREE"
+document.getElementById("finalTotal").innerText = subtotal.toFixed(2)
 
 }
 
 }
-
-})
-
-}
-
 
 /* ================= CART DRAWER ================= */
 
@@ -248,83 +261,6 @@ function closeDrawer(){
 document.getElementById("cartDrawer").classList.remove("open")
 
 document.getElementById("cartOverlay").classList.remove("show")
-
-}
-
-let cartBusy = false;
-
-function updateCart(productId, action){
-
-if(cartBusy) return;
-cartBusy = true;
-
-let qtyEl = document.getElementById("qty-"+productId)
-let itemTotalEl = document.getElementById("itemtotal-"+productId)
-
-let currentQty = parseInt(qtyEl.innerText)
-
-let newQty = currentQty
-
-if(action === "increase") newQty++
-if(action === "decrease") newQty--
-
-if(newQty < 0) newQty = 0
-
-/* -------- INSTANT UI UPDATE -------- */
-
-if(newQty === 0){
-document.getElementById("item-"+productId).remove()
-}else{
-qtyEl.innerText = newQty
-}
-
-/* update item price instantly */
-
-let price = parseFloat(itemTotalEl.innerText) / currentQty
-itemTotalEl.innerText = (price * newQty).toFixed(2)
-
-/* update subtotal instantly */
-
-recalculateCart()
-
-/* -------- SERVER UPDATE -------- */
-
-fetch("/update-cart/",{
-method:"POST",
-headers:{
-"X-CSRFToken":"{{csrf_token}}",
-"Content-Type":"application/x-www-form-urlencoded"
-},
-body:`product_id=${productId}&action=${action}`
-})
-.then(res=>res.json())
-.then(data=>{
-cartBusy = false
-})
-.catch(()=>{
-cartBusy = false
-})
-
-}
-
-function recalculateCart(){
-
-let subtotal = 0
-
-document.querySelectorAll(".item-total span").forEach(el=>{
-subtotal += parseFloat(el.innerText)
-})
-
-document.getElementById("subtotal").innerText = subtotal.toFixed(2)
-
-if(subtotal < 399){
-document.getElementById("shipping").innerText = "₹40"
-document.getElementById("finalTotal").innerText = (subtotal + 40).toFixed(2)
-}
-else{
-document.getElementById("shipping").innerText = "FREE"
-document.getElementById("finalTotal").innerText = subtotal.toFixed(2)
-}
 
 }
 

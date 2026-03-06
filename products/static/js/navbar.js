@@ -4,13 +4,15 @@
 
 const navbar = document.querySelector(".navbar");
 
-window.addEventListener("scroll", () => {
-  if (window.scrollY > 60) {
-    navbar.classList.add("scrolled");
-  } else {
-    navbar.classList.remove("scrolled");
-  }
-});
+if (navbar) {
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 60) {
+      navbar.classList.add("scrolled");
+    } else {
+      navbar.classList.remove("scrolled");
+    }
+  });
+}
 
 
 /* ==========================================
@@ -34,91 +36,105 @@ if (profileBtn && profileMenu) {
 
 
 /* ==========================================
-   MOBILE HAMBURGER DROPDOWN
+   MOBILE HAMBURGER MENU
 ========================================== */
 
-document.addEventListener("DOMContentLoaded",()=>{
+document.addEventListener("DOMContentLoaded", () => {
 
   const hamburger = document.getElementById("hamburger");
   const mobileMenu = document.getElementById("mobileMenu");
 
-  if(!hamburger || !mobileMenu) return;
+  if (!hamburger || !mobileMenu) return;
 
-  // start closed
   mobileMenu.classList.remove("show");
 
-  hamburger.addEventListener("click", e=>{
+  hamburger.addEventListener("click", e => {
     e.stopPropagation();
     mobileMenu.classList.toggle("show");
     hamburger.classList.toggle("active");
   });
 
-  document.addEventListener("click", ()=>{
+  document.addEventListener("click", () => {
     mobileMenu.classList.remove("show");
     hamburger.classList.remove("active");
   });
 
-  mobileMenu.addEventListener("click", e=>{
+  mobileMenu.addEventListener("click", e => {
     e.stopPropagation();
   });
 
 });
 
-document.addEventListener("DOMContentLoaded",()=>{
+
+/* ==========================================
+   MOBILE ACCOUNT DROPDOWN
+========================================== */
+
+document.addEventListener("DOMContentLoaded", () => {
 
   const mobileAccountBtn = document.getElementById("mobileAccountBtn");
   const mobileAccountDropdown = document.getElementById("mobileAccountDropdown");
 
-  if(mobileAccountBtn && mobileAccountDropdown){
+  if (!mobileAccountBtn || !mobileAccountDropdown) return;
 
-    mobileAccountBtn.addEventListener("click", e=>{
-      e.stopPropagation();
-      mobileAccountDropdown.classList.toggle("show");
-    });
+  mobileAccountBtn.addEventListener("click", e => {
+    e.stopPropagation();
+    mobileAccountDropdown.classList.toggle("show");
+  });
 
-    document.addEventListener("click", ()=>{
-      mobileAccountDropdown.classList.remove("show");
-    });
-
-  }
+  document.addEventListener("click", () => {
+    mobileAccountDropdown.classList.remove("show");
+  });
 
 });
-/* ================= ACCOUNT DROPDOWN ================= */
+
+
+/* ==========================================
+   ACCOUNT DROPDOWN
+========================================== */
 
 const accountBtn = document.getElementById("accountBtn");
 const accountDropdown = document.getElementById("accountDropdown");
 
-if(accountBtn && accountDropdown){
+if (accountBtn && accountDropdown) {
 
-  accountBtn.addEventListener("click", e=>{
+  accountBtn.addEventListener("click", e => {
     e.stopPropagation();
     accountDropdown.classList.toggle("show");
   });
 
-  document.addEventListener("click", ()=>{
+  document.addEventListener("click", () => {
     accountDropdown.classList.remove("show");
   });
 
 }
 
 
+/* ==========================================
+   LOGOUT MODAL
+========================================== */
+
 const logoutBtn = document.getElementById("logoutBtn");
 const logoutBtnMobile = document.getElementById("logoutBtnMobile");
 const logoutModal = document.getElementById("logoutModal");
 const cancelLogout = document.getElementById("cancelLogout");
-const confirmLogout = document.getElementById("confirmLogout");
+const confirmLogoutBtn = document.getElementById("confirmLogout");
 
-if (logoutBtn) {
+if (logoutBtn && logoutModal) {
   logoutBtn.onclick = () => logoutModal.style.display = "flex";
 }
 
-if (logoutBtnMobile) {
+if (logoutBtnMobile && logoutModal) {
   logoutBtnMobile.onclick = () => logoutModal.style.display = "flex";
 }
 
-cancelLogout.onclick = () => logoutModal.style.display = "none";
+if (cancelLogout && logoutModal) {
+  cancelLogout.onclick = () => logoutModal.style.display = "none";
+}
 
-confirmLogout.onclick = () => {
-  document.getElementById("logoutForm").submit();
-};
-
+if (confirmLogoutBtn) {
+  confirmLogoutBtn.onclick = () => {
+    const form = document.getElementById("logoutForm");
+    if (form) form.submit();
+  };
+}

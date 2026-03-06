@@ -8,6 +8,7 @@
 
 <meta name="csrf-token" content="{{ csrf_token }}">
 <link rel="stylesheet" href="{% static 'css/main.css' %}">
+<link rel="stylesheet" href="{% static 'css/cart_drawer.css' %}">
 <link rel="icon" href="{% static 'images/favicon.ico' %}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
@@ -36,8 +37,8 @@
 <div class="nav-right">
 
   {% if not user.is_staff %}
-    <a href="{% url 'cart' %}" class="nav-cart">
-Cart ({{ cart_count|default:"0" }})
+    <a href="javascript:void(0)" onclick="openCart()" class="nav-cart">
+Cart (<span id="cartCount">{{ cart_count|default:"0" }}</span>)
 </a>
   {% endif %}
 
@@ -557,10 +558,13 @@ Cart ({{ cart_count|default:"0" }})
 </form>
 
 </div>
+
+{% include "cart_drawer.html" %}
 <!-- ================= JS ================= -->
 <script src="{% static 'js/scroll.js' %}"></script>
 <script src="{% static 'js/navbar.js' %}"></script>
 <script src="{% static 'js/mail.js' %}"></script>
+<script src="{% static 'js/cart.js' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 </html>

@@ -1,269 +1,608 @@
- {% load static %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <title>My Profile | Crave Cart</title>
-  <link rel="stylesheet" href="{% static 'css/footer.css' %}">
+
+<meta charset="UTF-8">
+<title>My Profile</title>
+
+<link rel="stylesheet" href="{% static 'css/header_footer.css' %}">
+<link rel="stylesheet" href="{% static 'css/cart_drawer.css' %}">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   
-  <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+
 </head>
+
 <body>
 
 
-<div class="profile-page">
+<header class="navbar">
 
-  <!-- ================= PROFILE HEADER ================= -->
-  <div class="card profile-header">
-    <form method="POST" action="{% url 'update_profile_photo' %}" enctype="multipart/form-data">
-      {% csrf_token %}
-      <div class="avatar-box">
-        <img src="{% if profile.profile_photo %}{{ profile.profile_photo.url }}{% else %}{% static 'images/default_user.png' %}{% endif %}">
-        <label class="upload-btn">
-          Change Photo
-          <input type="file" name="profile_photo" hidden onchange="this.form.submit()">
-        </label>
-      </div>
-    </form>
-
-    <div class="profile-info">
-      <h2>{{ user.first_name }} {{ user.last_name }}</h2>
-      <p class="username">@{{ user.username }}</p>
-      <p>{{ user.email }}</p>
-      <p><strong>Primary Mobile:</strong> {{ primary_mobile }}</p>
-    </div>
+  <!-- LEFT -->
+  <div class="nav-left">
+    <a href="{% url 'home' %}">
+  <img src="{% static 'images/icons/logo.png' %}" class="logo-img">
+</a>
   </div>
 
-  <!-- ================= PERSONAL DETAILS ================= -->
-  <div class="card">
-    <div class="card-header">
-      <h3>Personal Details</h3>
-      <button type="button" class="btn-outline" onclick="enableProfileEdit()">Edit Profile</button>
-    </div>
+  <!-- CENTER -->
+  <nav class="nav-center">
+    <a href="{% url 'home' %}">About</a>
+    <a href="{% url 'products' %}">Products</a>
+    <a href="#contact">Contact</a>
+  </nav>
 
-    <form method="POST" action="{% url 'update_profile' %}" id="profileForm">
-      {% csrf_token %}
+  <!-- RIGHT -->
+<div class="nav-right">
 
-      <div class="form-grid">
+  {% if not user.is_staff %}
+    <a href="javascript:void(0)" onclick="openCart()" class="nav-cart">
+Cart (<span id="cartCount">{{ cart_count|default:"0" }}</span>)
+</a>
+  {% endif %}
 
-        <div class="full email-edit-box">
-          <label>Username</label>
-          <div class="email-display">
-            <input name="username" id="usernameInput" value="{{ user.username }}" readonly>
-            <span class="edit-icon disabled" id="usernamePen" onclick="openUsernamePopup()">✏️</span>
-          </div>
-        </div>
+  <!-- ACCOUNT DROPDOWN -->
+  <div class="account-wrap">
 
-        <div>
-          <label>First Name</label>
-          <input name="first_name" value="{{ user.first_name }}" readonly>
-        </div>
+    <button class="account-btn" id="accountBtn">Account</button>
 
-        <div>
-          <label>Last Name</label>
-          <input name="last_name" value="{{ user.last_name }}" readonly>
-        </div>
+    <div class="account-dropdown" id="accountDropdown">
 
-        <div class="full email-edit-box">
-          <label>Email</label>
-          <div class="email-display">
-            <input type="email" name="email" id="emailInput" value="{{ user.email }}" readonly class="readonly">
-            <span class="edit-icon disabled" id="emailPen" onclick="openEmailPopup()">✏️</span>
-          </div>
-        </div>
+      {% if user.is_authenticated %}
 
-        <div>
-          <label>Gender</label>
-          <input name="gender" value="{{ profile.gender|default:'' }}" readonly>
-        </div>
-
-        <div>
-          <label>Date of Birth</label>
-          <input type="date" name="date_of_birth" value="{{ profile.date_of_birth|date:'Y-m-d' }}" readonly>
-        </div>
-
+      <div class="account-user">
+      Hi, {{ user.username }} 👋 
       </div>
 
-      <button type="submit" class="btn-outline save-btn" style="display:none;">Save Changes</button>
-    </form>
+      {% if user.is_staff %}
+        <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+      {% else %}
+        <a href="{% url 'profile' %}">Profile</a>
+
+        <a href="{% url 'orders' %}">My Orders</a>
+      {% endif %}
+
+      <a href="#" id="logoutBtn">Logout</a>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+    </div>
+
   </div>
 
-  <!-- ================= SAVED ADDRESSES ================= -->
-  <div class="card">
-    <div class="card-header row-between">
-      <h3>Saved Addresses</h3>
-      <button type="button" class="btn-outline" onclick="openAddressModal()">+ Add New Address</button>
-    </div>
-
-    <div class="list-box" id="addressList">
-      {% for addr in extra_addresses %}
-        <div class="list-item" id="addr-{{ addr.id }}">
-          <div class="list-left">
-            <div class="list-title">
-              <strong>{{ addr.label }}</strong>
-              {% if addr.is_default %}
-                <span class="badge">Default</span>
-              {% endif %}
-            </div>
-            <div class="list-sub">{{ addr.address }}</div>
-          </div>
-
-          <div class="list-actions">
-            {% if not addr.is_default %}
-              <button class="chip-btn" type="button" onclick="makeDefaultAddress({{ addr.id }})">Make Default</button>
-            {% endif %}
-            <button class="icon-btn no-circle" type="button" onclick="deleteAddress({{ addr.id }})" title="Delete"><span class="bin-emoji">🗑️</span></button>
-          </div>
-        </div>
-      {% empty %}
-        <p class="muted" id="addrEmpty">No saved addresses yet.</p>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- ================= MOBILE NUMBERS ================= -->
-  <div class="card">
-    <div class="card-header row-between">
-      <h3>Mobile Numbers</h3>
-      <button type="button" class="btn-outline" onclick="openMobileModal()">+ Add Mobile Number</button>
-    </div>
-
-    <div class="list-box" id="mobileList">
-      {% for m in extra_mobiles %}
-        <div class="list-item" id="mob-{{ m.id }}">
-          <div class="list-left">
-            <div class="list-title">
-              <strong>{% if m.is_primary %}Primary{% else %}Secondary{% endif %}:</strong>
-              <span class="mono">{{ m.mobile }}</span>
-              {% if m.is_verified %}
-                <span class="status verified">(Verified)</span>
-              {% endif %}
-            </div>
-          </div>
-
-          <div class="list-actions">
-            {% if not m.is_primary %}
-              <button class="chip-btn" type="button" onclick="makePrimaryMobile({{ m.id }})">Make Primary</button>
-            {% endif %}
-            <button class="icon-btn no-circle" type="button" onclick="deleteMobile({{ m.id }})"><span class="bin-emoji">🗑️</span></button>
-          </div>
-        </div>
-      {% empty %}
-        <p class="muted" id="mobEmpty">No extra mobile numbers added.</p>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- ================= ADDRESS MODAL ================= -->
-  <div id="addressModal" class="popup-overlay" style="display:none;">
-    <div class="popup-card">
-      <h3>Add Address</h3>
-
-      <form id="addressForm">
-        {% csrf_token %}
-        <input type="text" name="label" placeholder="Label (Home/Work)" required>
-        <textarea name="address" placeholder="Full Address" required
-          style="width:100%;margin-top:10px;padding:10px;border:1px solid #ddd;border-radius:10px;"></textarea>
-
-        <div style="display:flex;gap:10px;margin-top:12px;">
-          <button type="submit" class="btn-outline">Add</button>
-          <button type="button" class="btn-outline" onclick="closeAddressModal()">Cancel</button>
-        </div>
-
-        <div id="addressErr" style="color:red;font-size:13px;margin-top:8px;"></div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ================= MOBILE MODAL ================= -->
-  <div id="mobileModal" class="popup-overlay" style="display:none;">
-    <div class="popup-card">
-      <h3>Add Mobile Number</h3>
-
-      <form id="mobileForm">
-        {% csrf_token %}
-        <input type="text" name="mobile"
-               placeholder="Enter 10-digit mobile number"
-               inputmode="numeric"
-               maxlength="10"
-               pattern="^[6-9]\d{9}$"
-               title="Enter valid 10-digit Indian mobile number"
-               required>
-
-        <div style="display:flex;gap:10px;margin-top:12px;">
-          <button type="submit" class="btn-outline">Add</button>
-          <button type="button" class="btn-outline" onclick="closeMobileModal()">Cancel</button>
-        </div>
-
-        <div id="mobileErr" style="color:red;font-size:13px;margin-top:8px;"></div>
-      </form>
-    </div>
-  </div>
-
-
-
-  <!-- ================= USERNAME PASSWORD POPUP ================= -->
-  <div id="usernamePopup" class="popup-overlay" style="display:none;">
-    <div class="popup-card">
-      <h3>Verify Password</h3>
-
-      <form id="usernameVerifyForm">
-        {% csrf_token %}
-        <input type="password" name="password" placeholder="Enter current password" required>
-        <div id="usernameVerifyError" style="color:red;font-size:13px;margin-top:8px;"></div>
-
-        <button type="submit" class="btn-outline">Verify</button>
-        <button type="button" class="btn-outline" onclick="closeUsernamePopup()">Cancel</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- ================= EMAIL PASSWORD POPUP ================= -->
-  <div id="emailPopup" class="popup-overlay" style="display:none;">
-    <div class="popup-card">
-      <h3>Verify Password</h3>
-
-      <form id="emailVerifyForm">
-        {% csrf_token %}
-        <input type="password" name="password" placeholder="Enter current password" required>
-        <div id="emailVerifyError" style="color:red;font-size:13px;margin-top:8px;"></div>
-
-        <button type="submit" class="btn-outline">Verify</button>
-        <button type="button" class="btn-outline" onclick="closeEmailPopup()">Cancel</button>
-      </form>
-    </div>
-  </div>
-
-</div><!-- ✅ end profile-page -->
-
-
-<!-- ================= CONFIRM POPUP (reusable) ================= -->
-<div id="confirmPopup" class="popup-overlay" style="display:none;" onclick="confirmOverlayClick(event)">
-  <div class="popup-card confirm-card">
-    <h3 id="confirmTitle" class="confirm-title">Confirm</h3>
-    <p id="confirmMessage" class="confirm-msg"></p>
-
-    <div class="confirm-actions">
-      <button type="button" class="btn-outline" id="confirmOkBtn">OK</button>
-      <button type="button" class="btn-outline" onclick="closeConfirmPopup()">Cancel</button>
-    </div>
-  </div>
+  <!-- mobile hamburger -->
+  <div class="hamburger" id="hamburger">
+  <span></span>
+  <span></span>
+  <span></span>
 </div>
+
+</div>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+
+  <a href="{% url 'home' %}">About</a>
+  <a href="{% url 'products' %}">Products</a>
+  <a href="#contact">Contact</a> 
+
+  <!-- MOBILE ACCOUNT -->
+
+  <div class="mobile-account">
+
+    <div id="mobileAccountBtn" class="mobile-account-btn">
+      Account ▾
+    </div>
+
+    <div id="mobileAccountDropdown" class="mobile-account-dropdown">
+
+      {% if user.is_authenticated %}
+
+        <div class="account-user">
+        Hi, {{ user.username }} 👋
+        </div>
+
+        {% if user.is_staff %}
+          <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+        {% else %}
+          <a href="{% url 'profile' %}">Profile</a>
+
+          <a href="{% url 'orders' %}">My Orders</a>
+        {% endif %}
+
+        <a href="#" id="logoutBtnMobile">Logout</a>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>
+
+</header>
+
+<div class="profile-container">
+
+
+<!-- PROFILE HERO -->
+
+<div class="profile-hero">
+
+<div class="profile-avatar">
+
+<img src="{% if profile.profile_photo %}{{ profile.profile_photo.url }}{% else %}{% static 'images/default_user.png' %}{% endif %}">
+
+<form method="POST" action="{% url 'update_profile_photo' %}" enctype="multipart/form-data" class="avatar-form">
+{% csrf_token %}
+
+<label class="upload-btn">
+Upload Photo
+<input type="file" name="profile_photo" hidden onchange="this.form.submit()">
+</label>
+
+</form>
+
+</div>
+
+<div class="profile-info">
+
+<h2>{{ user.first_name }} {{ user.last_name }}</h2>
+
+<p>@{{ user.username }}</p>
+
+<div class="profile-meta">
+<span>{{ user.email }}</span>
+<span>{{ primary_mobile }}</span>
+</div>
+
+</div>
+
+</div>
+
+
+
+<!-- PERSONAL DETAILS -->
+
+<div class="dashboard-card">
+
+<div class="card-header">
+
+<h3>Personal Details</h3>
+
+<button class="btn-primary" onclick="enableProfileEdit()">Edit Profile</button>
+
+</div>
+
+<form method="POST" action="{% url 'update_profile' %}" id="profileForm">
+
+{% csrf_token %}
+
+<div class="form-grid">
+
+<div class="input-group full">
+
+<label>Username</label>
+
+<div class="email-display">
+
+<input name="username" id="usernameInput" value="{{ user.username }}" readonly>
+
+<span class="edit-icon disabled" id="usernamePen" onclick="openUsernamePopup()">✏</span>
+
+</div>
+
+</div>
+
+
+<div class="input-group">
+
+<label>First Name</label>
+
+<input name="first_name" value="{{ user.first_name }}" class="editable" readonly>
+
+</div>
+
+
+<div class="input-group">
+
+<label>Last Name</label>
+
+<input name="last_name" value="{{ user.last_name }}" class="editable" readonly>
+
+</div>
+
+
+<div class="input-group full">
+
+<label>Email</label>
+
+<div class="email-display">
+
+<input type="email" name="email" id="emailInput" value="{{ user.email }}" readonly class="readonly">
+
+<span class="edit-icon disabled" id="emailPen" onclick="openEmailPopup()">✏</span>
+
+</div>
+
+</div>
+
+
+<div class="input-group">
+
+<label>Gender</label>
+
+<input name="gender" value="{{ profile.gender|default:'' }}" class="editable" readonly>
+
+</div>
+
+
+<div class="input-group">
+
+<label>Date of Birth</label>
+
+<input type="date" name="date_of_birth" value="{{ profile.date_of_birth|date:'Y-m-d' }}" class="editable" readonly>
+
+</div>
+
+</div>
+
+<button type="submit" class="save-btn" style="display:none;">Save Changes</button>
+
+</form>
+
+</div>
+
+<!-- ADDRESSES -->
+
+<div class="dashboard-card">
+
+<div class="card-header">
+<h3>Saved Addresses</h3>
+<button class="btn-secondary" onclick="openAddressModal()">+ Add Address</button>
+</div>
+
+<div class="address-grid" id="addressList">
+
+{% for addr in extra_addresses %}
+
+<div class="address-card" id="addr-{{ addr.id }}">
+
+<div class="address-info">
+  <h4>
+  {{ addr.label }}
+  {% if addr.is_default %}
+    <span class="badge">Default</span>
+  {% endif %}
+</h4>
+
+<p>{{ addr.address }}</p>
+</div>
+
+<div class="card-actions">
+{% if not addr.is_default %}
+<button onclick="makeDefaultAddress({{ addr.id }})">Make Default</button>
+{% endif %}
+<button class="delete-btn" onclick="deleteAddress({{ addr.id }})">🗑</button>
+</div>
+
+</div>
+
+{% empty %}
+
+<p id="addrEmpty">No saved addresses yet.</p>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+<!-- MOBILE NUMBERS -->
+
+<div class="dashboard-card">
+
+<div class="card-header">
+
+<h3>Mobile Numbers</h3>
+
+<button class="btn-secondary" onclick="openMobileModal()">+ Add Mobile</button>
+
+</div>
+
+<div class="mobile-grid" id="mobileList">
+
+{% for m in extra_mobiles %}
+
+<div class="mobile-card" id="mob-{{ m.id }}">
+
+<div class="mobile-info">
+<strong>{% if m.is_primary %}Primary{% else %}Secondary{% endif %}:</strong>
+{{ m.mobile }}
+</div>
+
+<div class="card-actions">
+{% if not m.is_primary %}
+<button onclick="makePrimaryMobile({{ m.id }})">Make Primary</button>
+{% endif %}
+<button class="delete-btn" onclick="deleteMobile({{ m.id }})">🗑</button>
+</div>
+
+</div>
+
+{% empty %}
+
+<p id="mobEmpty">No extra mobile numbers added.</p>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+
+</div>
+
+<!-- ADDRESS MODAL -->
+
+<div id="addressModal" class="modal">
+
+<div class="modal-box">
+
+<h3>Add Address</h3>
+
+<form id="addressForm">
+
+{% csrf_token %}
+
+<input type="text" name="label" placeholder="Label (Home / Work)">
+
+<textarea name="address" placeholder="Full Address" required></textarea>
+
+<p id="addressErr" style="color:red"></p>
+
+<div class="modal-actions">
+
+<button type="submit">Save</button>
+
+<button type="button" onclick="closeAddressModal()">Cancel</button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+<!-- MOBILE MODAL -->
+
+<div id="mobileModal" class="modal">
+
+<div class="modal-box">
+
+<h3>Add Mobile Number</h3>
+
+<form id="mobileForm">
+
+{% csrf_token %}
+
+<input type="text" name="mobile" placeholder="10 digit mobile number" required>
+
+<p id="mobileErr" style="color:red"></p>
+
+<div class="modal-actions">
+
+<button type="submit">Save</button>
+
+<button type="button" onclick="closeMobileModal()">Cancel</button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+<div id="confirmPopup" class="modal" onclick="confirmOverlayClick(event)">
+
+<div class="modal-box">
+
+<h3 id="confirmTitle">Confirm</h3>
+
+<p id="confirmMessage"></p>
+
+<div class="modal-actions">
+
+<button id="confirmOkBtn">OK</button>
+
+<button onclick="closeConfirmPopup()">Cancel</button>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+
+<div class="footer-inner">
+
+<!-- BRAND -->
+
+<div class="footer-col brand">
+
+  <div class="brand-row">
+    <img src="{% static 'images/icons/logo.png' %}" alt="Subio Foods Logo" class="footer-logo">
+  </div>
+
+  <p class="brand-text">
+    Naturally grown millets & spices  from trusted farmers to healthy homes.
+  </p>
+
+  <div class="social">
+    <div>
+  <a href="#" style="display:inline-block;margin-right:12px;">
+    <img src="{% static 'images/facebook.png' %}" width="20">
+  </a>
+
+  <a href="#" style="display:inline-block;margin-right:12px;">
+    <img src="{% static 'images/instagram.png' %}" width="20">
+  </a>
+
+  <a href="#" style="display:inline-block;">
+    <img src="{% static 'images/twitter.png' %}" width="20">
+  </a>
+</div>
+</div>
+
+</div>
+
+<!-- COMPANY -->
+
+<div class="footer-col">
+  <h4>Company</h4>
+  <a href="{% url 'home' %}">About Us</a>
+  <a href="{% url 'products' %}">Products</a>
+  <a href="#contact">Contact</a>
+</div>
+
+<!-- SUPPORT -->
+
+<div class="footer-col">
+  <h4>Support</h4>
+  <a href="#">FAQs</a>
+  <a href="#">Shipping Policy</a>
+  <a href="#">Terms & Conditions</a>
+  <a href="#">Privacy Policy</a>
+</div>
+
+<!-- NEWSLETTER -->
+
+<div class="footer-col offers">
+
+<h4>Get Exclusive Offers</h4>
+
+<form class="offer-form" id="newsletterForm"
+      data-url="{% url 'newsletter' %}"
+      method="post">
+
+{% csrf_token %}
+
+<input type="email"
+       id="newsletterEmail"
+       name="email"
+       placeholder="Enter your email"
+       required>
+
+<button type="submit">Subscribe</button>
+
+</form>
+
+<p id="newsletterMsg"></p>
+
+<div class="contact">
+<p><strong>Contact</strong></p>
+<p>subiofoods@gmail.com</p>
+<p>+91 96068 23003</p>
+</div>
+
+</div>
+
+</div>
+
+<div class="footer-bottom">
+<p>© 2026 Subio Foods. All rights reserved.</p>
+</div>
+
+</footer>
+
 
 <!-- LOGOUT MODAL -->
-<div class="logout-overlay" id="logoutOverlay">
-    <div class="logout-modal">
-        <h3>Confirm Logout</h3>
-        <p>Are you sure you want to log out?</p>
+<div id="logoutModal" class="logout-modal">
 
-        <button class="btn primary full-width" onclick="confirmLogout()">
-            Yes, Log Me Out
-        </button>
+  <div class="logout-box">
+    <h3>Logout?</h3>
+    <p>Are you sure you want to logout?</p>
+
+    <div class="logout-actions">
+      <button id="cancelLogout">Cancel</button>
+      <button id="confirmLogout">Logout</button>
     </div>
+  </div>
+
 </div>
 
+<form id="logoutForm" method="POST" action="{% url 'logout' %}">
+    {% csrf_token %}
+</form>
+
+</div>
+
+<div id="usernamePopup" class="modal">
+
+<div class="modal-box">
+
+<h3>Verify Password</h3>
+
+<form id="usernameVerifyForm">
+
+{% csrf_token %}
+
+<input type="password" name="password" placeholder="Enter password" required>
+
+<p id="usernameVerifyError" style="color:red"></p>
+
+<div class="modal-actions">
+<button type="submit">Verify</button>
+<button type="button" onclick="closeUsernamePopup()">Cancel</button>
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+
+<div id="emailPopup" class="modal">
+
+<div class="modal-box">
+
+<h3>Verify Password</h3>
+
+<form id="emailVerifyForm">
+
+{% csrf_token %}
+
+<input type="password" name="password" placeholder="Enter password" required>
+
+<p id="emailVerifyError" style="color:red"></p>
+
+<div class="modal-actions">
+<button type="submit">Verify</button>
+<button type="button" onclick="closeEmailPopup()">Cancel</button>
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+{% include "cart_drawer.html" %}
 <script src="{% static 'js/navbar.js' %}"></script>
+<script src="{% static 'js/cart.js' %}"></script>
 <script>
 let editMode = false;
 
@@ -284,10 +623,6 @@ function openLogoutModal() {
     document.getElementById("logoutOverlay").classList.add("show");
 }
 
-function confirmLogout() {
-    window.location.href = "{% url 'logout' %}";
-}
-
 /* ✅ safer: fetch csrf from any available csrf input on page */
 function getCSRFTokenFromAnyForm() {
   const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
@@ -303,16 +638,15 @@ function csrfFD() {
 
 /* ========== Personal edit ========== */
 function enableProfileEdit() {
+
   editMode = true;
 
-  const form = document.getElementById("profileForm");
-  form.querySelectorAll("input").forEach(i => {
-    if (!i.classList.contains("readonly") && i.name !== "username") {
+  document.querySelectorAll("#profileForm input.editable").forEach(i=>{
       i.removeAttribute("readonly");
-    }
   });
 
-  document.querySelector(".save-btn").style.display = "inline-block";
+  document.querySelector(".save-btn").style.display="inline-block";
+
   document.getElementById("usernamePen").classList.remove("disabled");
   document.getElementById("emailPen").classList.remove("disabled");
 }
@@ -334,7 +668,9 @@ function closeEmailPopup() {
 }
 
 /* Username verify */
-document.getElementById("usernameVerifyForm").addEventListener("submit", async function(e) {
+const usernameForm = document.getElementById("usernameVerifyForm");
+if(usernameForm){
+usernameForm.addEventListener("submit", async function(e){
   e.preventDefault();
 
   const formData = new FormData(this);
@@ -357,9 +693,12 @@ document.getElementById("usernameVerifyForm").addEventListener("submit", async f
     errorBox.textContent = data.message || "Verification failed";
   }
 });
+}
 
 /* Email verify */
-document.getElementById("emailVerifyForm").addEventListener("submit", async function(e) {
+const emailForm = document.getElementById("emailVerifyForm");
+if(emailForm){
+emailForm.addEventListener("submit", async function(e){
   e.preventDefault();
 
   const formData = new FormData(this);
@@ -383,6 +722,7 @@ document.getElementById("emailVerifyForm").addEventListener("submit", async func
     errorBox.textContent = data.message || "Verification failed";
   }
 });
+}
 
 /* ========== Helpers ========== */
 function escapeHtml(str){
@@ -457,20 +797,22 @@ document.getElementById("addressForm").addEventListener("submit", async (e) => {
 
   document.getElementById("addrEmpty")?.remove();
 
-  document.getElementById("addressList").insertAdjacentHTML("afterbegin", `
-    <div class="list-item" id="addr-${data.id}">
-      <div class="list-left">
-        <div class="list-title">
-          <span class="icon">🏠</span>
-          <strong>${escapeHtml(data.label || "Address")}</strong>
-        </div>
-        <div class="list-sub">${escapeHtml(data.address || "")}</div>
+document.getElementById("addressList").insertAdjacentHTML("afterbegin", `
+  <div class="address-card" id="addr-${data.id}">
+    <div class="list-left">
+      <div class="list-title">
+        <strong>${escapeHtml(data.label || "Address")}</strong>
+        ${data.is_default ? '<span class="badge">Default</span>' : ''}
       </div>
-      <div class="list-actions">
-        <button class="icon-btn danger" type="button" onclick="deleteAddress(${data.id})" title="Delete">🗑️</button>
-      </div>
+      <div class="list-sub">${escapeHtml(data.address || "")}</div>
     </div>
-  `);
+
+    <div class="list-actions">
+      ${data.is_default ? '' : `<button class="chip-btn" type="button" onclick="makeDefaultAddress(${data.id})">Make Default</button>`}
+      <button class="icon-btn" type="button" onclick="deleteAddress(${data.id})">🗑️</button>
+    </div>
+  </div>
+`);
 
   form.reset();
   closeAddressModal();
@@ -491,7 +833,7 @@ window.deleteAddress = function(id){
       document.getElementById(`addr-${id}`)?.remove();
 
       const list = document.getElementById("addressList");
-      if(list && list.querySelectorAll(".list-item").length === 0){
+      if(list && list.children.length === 0){
         list.innerHTML = `<p class="muted" id="addrEmpty">No saved addresses yet.</p>`;
       }
     }
@@ -530,7 +872,7 @@ document.getElementById("mobileForm").addEventListener("submit", async (e) => {
   document.getElementById("mobEmpty")?.remove();
 
   document.getElementById("mobileList").insertAdjacentHTML("afterbegin", `
-    <div class="list-item" id="mob-${data.id}">
+    <div class="mobile-card" id="mob-${data.id}">
       <div class="list-left">
         <div class="list-title">
           <strong>${data.is_primary ? "Primary" : "Secondary"}:</strong>
@@ -563,7 +905,7 @@ window.deleteMobile = function(id){
       document.getElementById(`mob-${id}`)?.remove();
 
       const list = document.getElementById("mobileList");
-      if(list && list.querySelectorAll(".list-item").length === 0){
+      if(list && list.children.length === 0){
         list.innerHTML = `<p class="muted" id="mobEmpty">No extra mobile numbers added.</p>`;
       }
     }

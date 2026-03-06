@@ -3,6 +3,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/product_detail.css' %}">
 <link rel="stylesheet" href="{% static 'css/header_footer.css' %}">
+<link rel="stylesheet" href="{% static 'css/cart_drawer.css' %}">
 
 <header class="navbar">
 
@@ -24,8 +25,8 @@
 <div class="nav-right">
 
   {% if not user.is_staff %}
-    <a href="{% url 'cart' %}" class="nav-cart">
-Cart ({{ cart_count|default:"0" }})
+    <a href="javascript:void(0)" onclick="openCart()" class="nav-cart">
+Cart (<span id="cartCount">{{ cart_count|default:"0" }}</span>)
 </a>
   {% endif %}
 
@@ -126,7 +127,10 @@ Cart ({{ cart_count|default:"0" }})
     <button class="arrow left" id="prevBtn">‹</button>
   {% endif %}
 
-  <img src="{{ product.image.url }}" class="main-img" id="mainImg">
+<img src="{{ product.image.url }}"
+     class="main-img"
+     id="mainImg"
+     data-product-image="{{ product.id }}">
 
   {% if product.images.exists %}
     <button class="arrow right" id="nextBtn">›</button>
@@ -150,9 +154,11 @@ Cart ({{ cart_count|default:"0" }})
 
 <div class="product-info">
 
-<h1>{{ product.name }}</h1>
+<h1 data-product-name="{{ product.id }}">{{ product.name }}</h1>
 
-<div class="price">₹{{ product.price }}</div>
+<div class="price" data-product-price="{{ product.id }}">
+₹{{ product.price }}
+</div>
 
 {% comment %} <p class="gst">Inclusive of {{ product.gst_percentage }}% GST</p> {% endcomment %}
 
@@ -378,14 +384,17 @@ Out of Stock
     {% csrf_token %}
 </form>
 
-
+{% include "cart_drawer.html" %}
 
 <script src="{% static 'js/navbar.js' %}"></script>
 <script src="{% static 'js/scroll.js' %}"></script>
 <script src="{% static 'js/shop.js' %}"></script>
 <script src="{% static 'js/cart.js' %}"></script>
+
+
 <script>
-const ADD_TO_CART_URL = "{% url 'add_to_cart' %}";
+const UPDATE_CART_URL = "{% url 'update_cart' %}";
+
 const mainImg = document.getElementById("mainImg");
 const slider = document.getElementById("slider");
 const thumbs = document.querySelectorAll(".thumb");

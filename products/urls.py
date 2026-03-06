@@ -28,16 +28,16 @@ urlpatterns = [
     path("delete-mobile/<int:id>/", views.delete_extra_mobile, name="delete_extra_mobile"),
     path("make-primary-mobile/<int:id>/", views.make_primary_mobile, name="make_primary_mobile"),
 
-    # ================= PRODUCTS (USER) =================
+    # ================= PRODUCTS =================
     path("products/", views.products, name="products"),
     path("products/<slug:slug>/", views.products_by_category, name="products_by_category"),
     path("product/<int:id>/", views.product_detail, name="product_detail"),
 
     # ================= CART =================
     path("cart/", views.cart_view, name="cart"),
-    path("add-to-cart/", views.add_to_cart, name="add_to_cart"),
     path("remove/<int:product_id>/", views.remove_from_cart, name="remove_from_cart"),
-    path("update-cart/", views.update_cart_quantity, name="update_cart"),
+    path("update-cart/", views.update_cart, name="update_cart"),
+
     path("cart-json/", views.cart_json, name="cart_json"),
 
     # ================= ORDERS =================
@@ -61,5 +61,4 @@ urlpatterns = [
     path("delete-category/<int:id>/", views.delete_category, name="delete_category"),
     path("inline-add-product/<int:cat_id>/", views.inline_add_product, name="inline_add_product"),
     path("create-category/", views.create_category, name="create_category"),
-
 ]

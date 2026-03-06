@@ -15,21 +15,20 @@
     display: flex;
     gap: 40px;
     align-items: flex-start;
+    flex-wrap:wrap;
 }
 
 .cart-items {
     flex: 2;
 }
 
-.cart-card {
-    display: flex;
-    gap: 20px;
-    background: white;
-    padding: 20px;
-    border-radius: 16px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-    margin-bottom: 20px;
-    transition: 0.3s;
+.cart-card{
+display:flex;
+gap:20px;
+padding:20px;
+border-radius:12px;
+background:white;
+box-shadow:0 4px 12px rgba(0,0,0,0.08);
 }
 
 .cart-card:hover {
@@ -149,4 +148,22 @@
     .cart-container {
         flex-direction: column;
     }
+}
+
+.cart-items{
+display:flex;
+flex-direction:column;
+gap:20px;
+max-height:70vh;
+overflow-y:auto;
+padding-right:10px;
+}
+
+.cart-items::-webkit-scrollbar{
+width:6px;
+}
+
+.cart-items::-webkit-scrollbar-thumb{
+background:#ccc;
+border-radius:10px;
 }
