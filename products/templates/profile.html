@@ -139,7 +139,20 @@ Cart (<span id="cartCount">{{ cart_count|default:"0" }}</span>)
 
 <div class="profile-avatar">
 
-<img src="{% if profile.profile_photo %}{{ profile.profile_photo.url }}{% else %}{% static 'images/default_user.png' %}{% endif %}">
+<img src="
+{% if profile.profile_photo %}
+    {{ profile.profile_photo.url }}
+
+{% elif profile.gender == 'Male' %}
+    {% static 'images/default-male.png' %}
+
+{% elif profile.gender == 'Female' %}
+    {% static 'images/default-female.png' %}
+
+{% else %}
+    {% static 'images/default-other.png' %}
+{% endif %}
+">
 
 <form method="POST" action="{% url 'update_profile_photo' %}" enctype="multipart/form-data" class="avatar-form">
 {% csrf_token %}
@@ -240,7 +253,11 @@ Upload Photo
 
 <label>Gender</label>
 
-<input name="gender" value="{{ profile.gender|default:'' }}" class="editable" readonly>
+<select name="gender" class="editable" disabled id="genderSelect">
+<option value="Male" {% if profile.gender == "Male" %}selected{% endif %}>Male</option>
+<option value="Female" {% if profile.gender == "Female" %}selected{% endif %}>Female</option>
+<option value="Other" {% if profile.gender == "Other" %}selected{% endif %}>Other</option>
+</select>
 
 </div>
 
@@ -937,6 +954,28 @@ async function makeDefaultAddress(id){
 
   const data = await res.json();
   if(data.success) location.reload();
+}
+
+function enableProfileEdit() {
+
+  editMode = true;
+
+  document.querySelectorAll("#profileForm .editable").forEach(el => {
+
+    if (el.tagName === "INPUT") {
+        el.removeAttribute("readonly");
+    }
+
+    if (el.tagName === "SELECT") {
+        el.removeAttribute("disabled");
+    }
+
+  });
+
+  document.querySelector(".save-btn").style.display="inline-block";
+
+  document.getElementById("usernamePen").classList.remove("disabled");
+  document.getElementById("emailPen").classList.remove("disabled");
 }
 </script>
 

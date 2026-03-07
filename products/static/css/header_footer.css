@@ -158,7 +158,7 @@
 
 .hamburger span{
   height:2px;
-  background:white;
+  background:#222;
   border-radius:2px;
   transition:.3s ease;
 }

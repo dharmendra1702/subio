@@ -426,3 +426,204 @@ cursor:pointer;
 .upload-btn:hover{
 background:#333;
 }
+
+/* ===== SELECT DROPDOWN (Gender) ===== */
+
+select{
+width:100%;
+padding:10px;
+border-radius:6px;
+border:1px solid #ddd;
+font-size:14px;
+background:white;
+appearance:none;
+cursor:pointer;
+transition:0.2s;
+}
+
+select:focus{
+outline:none;
+border-color:#111;
+}
+
+/* ===== LOCKED FIELD STYLE ===== */
+
+input[readonly],
+select:disabled{
+background:#f7f7f7;
+color:#777;
+cursor:not-allowed;
+border-color:#e3e3e3;
+}
+
+/* ===== EDIT MODE TRANSITION ===== */
+
+input,
+select{
+transition:all .2s ease;
+}
+
+/* ===== CUSTOM DROPDOWN ARROW ===== */
+
+select{
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6 6 6-6' stroke='%23666' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+background-repeat:no-repeat;
+background-position:right 10px center;
+background-size:12px;
+padding-right:30px;
+}
+
+select:hover:not(:disabled){
+border-color:#111;
+}
+
+.profile-avatar img{
+width:110px;
+height:110px;
+border-radius:50%;
+object-fit:cover;
+border:3px solid #eee;
+transition:0.3s;
+}
+
+.profile-avatar img:hover{
+transform:scale(1.05);
+}
+
+/* ================= MOBILE ================= */
+
+@media (max-width:600px){
+
+.profile-container{
+margin:30px auto;
+gap:25px;
+padding:0 15px;
+}
+
+/* PROFILE HEADER */
+
+.profile-hero{
+flex-direction:column;
+align-items:center;
+text-align:center;
+padding:20px;
+gap:15px;
+}
+
+.profile-avatar img{
+width:80px;
+height:80px;
+}
+
+.profile-info h2{
+font-size:20px;
+}
+
+.profile-meta{
+flex-direction:column;
+gap:5px;
+align-items:center;
+font-size:13px;
+}
+
+/* FORM */
+
+.form-grid{
+grid-template-columns:1fr;
+gap:14px;
+}
+
+input,
+select{
+padding:12px;
+font-size:15px;
+}
+
+/* ADDRESS + MOBILE CARDS */
+
+.address-card,
+.mobile-card{
+flex-direction:column;
+align-items:flex-start;
+gap:12px;
+padding:16px;
+}
+
+.card-actions{
+width:100%;
+justify-content:flex-end;
+}
+
+/* BUTTONS */
+
+.btn-primary,
+.btn-secondary,
+.save-btn{
+width:100%;
+padding:12px;
+}
+
+/* MODAL */
+
+.modal-box{
+width:90%;
+max-width:320px;
+}
+
+}
+
+/* ================= TABLET ================= */
+
+@media (max-width:900px){
+
+.profile-container{
+margin:40px auto;
+gap:28px;
+}
+
+/* HEADER */
+
+.profile-hero{
+gap:20px;
+}
+
+/* FORM */
+
+.form-grid{
+grid-template-columns:1fr 1fr;
+gap:16px;
+}
+
+/* ADDRESS */
+
+.address-card,
+.mobile-card{
+padding:16px 18px;
+}
+
+.modal-box{
+width:360px;
+}
+
+}
+
+@media (max-width:1100px){
+
+.profile-container{
+max-width:850px;
+}
+
+}
+
+button{
+min-height:38px;
+}
+
+@media (max-width:600px){
+
+.profile-avatar img{
+width:75px;
+height:75px;
+}
+
+}

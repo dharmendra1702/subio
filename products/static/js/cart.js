@@ -72,7 +72,6 @@ if(el) el.innerText = count;
 
 
 /* ================= DRAWER ================= */
-
 function updateDrawer(){
 
 let html = "";
@@ -86,7 +85,7 @@ html += `
 <div class="drawer-item">
 <img src="${item.image}">
 <div class="drawer-info">
-<p>${item.name}</p>
+<p class="drawer-name">${item.name}</p>
 <p>₹${item.price} × ${item.quantity}</p>
 </div>
 </div>
@@ -96,8 +95,23 @@ html += `
 
 const items = document.getElementById("drawerItems");
 const totalEl = document.getElementById("drawerTotal");
+const empty = document.getElementById("emptyCart");
+const footer = document.querySelector(".drawer-footer");
 
-if(items) items.innerHTML = html;
+if(Object.keys(cart).length === 0){
+
+if(empty) empty.style.display="flex";
+if(footer) footer.style.display="none";
+
+}else{
+
+if(empty) empty.style.display="none";
+if(footer) footer.style.display="block";
+
+items.innerHTML = html;
+
+}
+
 if(totalEl) totalEl.innerText = total.toFixed(2);
 
 }

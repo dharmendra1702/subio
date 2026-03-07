@@ -449,37 +449,6 @@ def cart_json(request):
         "total":total
     })
 
-from .models import UserProfile, Address
-from django.contrib.auth.decorators import login_required
-
-
-@login_required
-def complete_profile(request):
-
-    profile, created = UserProfile.objects.get_or_create(user=request.user)
-
-    if request.method == "POST":
-
-        profile.full_name = request.POST["name"]
-        profile.phone = request.POST["phone"]
-        profile.save()
-
-        Address.objects.create(
-            user=request.user,
-            name=request.POST["name"],
-            phone=request.POST["phone"],
-            house=request.POST["house"],
-            street=request.POST["street"],
-            city=request.POST["city"],
-            state=request.POST["state"],
-            pincode=request.POST["pincode"],
-            label=request.POST["label"],
-            is_default=True
-        )
-
-        return redirect("home")
-
-    return render(request,"complete_profile.html")
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from .models import UserProfile, Address, MobileNumber
@@ -731,3 +700,48 @@ def orders(request):
 def get_cart_count(request):
     cart = request.session.get("cart", {})
     return sum(item["quantity"] for item in cart.values())
+
+@login_required
+def complete_profile(request):
+
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == "POST":
+
+        user = request.user
+
+        # USER MODEL
+        user.first_name = request.POST.get("first_name")
+        user.last_name = request.POST.get("last_name")
+        user.save()
+
+        # PROFILE MODEL
+        profile.gender = request.POST.get("gender")
+        profile.date_of_birth = request.POST.get("date_of_birth") or None
+        profile.save()
+
+        # MOBILE NUMBER
+        mobile = request.POST.get("mobile")
+
+        if mobile:
+            MobileNumber.objects.get_or_create(
+                user=user,
+                mobile=mobile,
+                defaults={"is_primary": True}
+            )
+
+        # ADDRESS
+        address = request.POST.get("address")
+        label = request.POST.get("label")
+
+        if address:
+            Address.objects.create(
+                user=user,
+                label=label,
+                address=address,
+                is_default=True
+            )
+
+        return redirect("profile")
+
+    return render(request, "complete_profile.html")

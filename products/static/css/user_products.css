@@ -551,3 +551,150 @@ cursor:pointer;
 .cat-circle:hover .circle-img {
     transform: scale(1.05);
 }
+
+
+/* ================= MOBILE ================= */
+
+@media (max-width:600px){
+
+.shop{
+padding:70px 20px;
+}
+
+h1{
+font-size:34px;
+}
+
+.subtitle{
+font-size:14px;
+margin-bottom:35px;
+}
+
+/* CATEGORY */
+
+.category-slider{
+gap:25px;
+overflow-x:auto;
+justify-content:flex-start;
+padding-bottom:15px;
+}
+
+.cat-circle img{
+width:70px;
+height:70px;
+}
+
+.cat-circle span{
+font-size:13px;
+}
+
+/* FILTER PANEL */
+
+.filter-panel{
+flex-direction:column;
+gap:12px;
+}
+
+.filter-panel input,
+.filter-btn,
+.sort-select{
+width:100%;
+padding:12px 18px;
+}
+
+/* PRODUCTS GRID */
+
+.products{
+grid-template-columns:1fr;
+gap:25px;
+}
+
+/* CARD */
+
+.card{
+width:100%;
+padding:18px;
+}
+
+.card img{
+height:200px;
+}
+
+.card-body h3{
+font-size:16px;
+min-height:auto;
+}
+
+.card-body p{
+font-size:16px;
+}
+
+.buttons{
+flex-direction:column;
+gap:10px;
+}
+
+.view,
+.add-btn{
+width:100%;
+text-align:center;
+}
+
+.cart-control{
+width:100%;
+}
+
+.qty-box{
+width:100%;
+justify-content:space-between;
+}
+
+}
+
+/* ================= TABLET ================= */
+
+@media (max-width:1000px){
+
+.shop{
+padding:70px 30px;
+}
+
+/* PRODUCTS */
+
+.products{
+grid-template-columns:repeat(2,1fr);
+gap:30px;
+}
+
+/* CATEGORY */
+
+.cat-circle img{
+width:85px;
+height:85px;
+}
+
+.filter-panel{
+flex-wrap:wrap;
+gap:15px;
+}
+
+.filter-panel input{
+flex:1;
+}
+
+} 
+
+@media (max-width:1200px){
+
+.products{
+grid-template-columns:repeat(3,1fr);
+}
+
+}
+
+.products{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+gap:40px;
+margin-top:40px;
+}

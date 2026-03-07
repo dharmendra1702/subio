@@ -1,52 +1,159 @@
 {% load static %}
-
 <link rel="stylesheet" href="{% static 'css/complete_profile.css' %}">
 
-<div class="profile-container">
+<div class="complete-wrapper">
 
-<h2>Complete Your Profile</h2>
+<div class="complete-card">
 
-<form method="POST">
+<div class="top">
+<h2>Welcome to <span>Subio Foods</span> 🌿</h2>
+<p>Just a few details to start ordering healthy products.</p>
+</div>
 
+<form method="POST" id="completeProfileForm">
 {% csrf_token %}
 
-<div class="section">
+<div class="grid">
 
-<h3>Personal Details</h3>
-
-<input type="text" name="name" placeholder="Full Name" required>
-
-<input type="tel" name="phone" placeholder="Phone Number" required>
-
+<div class="field">
+<label>First Name</label>
+<input type="text" name="first_name" required>
 </div>
 
+<div class="field">
+<label>Last Name</label>
+<input type="text" name="last_name" required>
+</div>
 
-<div class="section">
+<div class="field">
+<label>Mobile Number</label>
+<input type="tel" name="mobile" maxlength="10" required>
+</div>
 
-<h3>Add Address</h3>
-
-<input type="text" name="house" placeholder="House / Flat / Building" required>
-
-<input type="text" name="street" placeholder="Street / Area">
-
-<input type="text" name="city" placeholder="City">
-
-<input type="text" name="state" placeholder="State">
-
-<input type="text" name="pincode" placeholder="Pincode">
-
-<select name="label">
-<option value="home">Home</option>
-<option value="work">Work</option>
-<option value="other">Other</option>
+<div class="field">
+<label>Gender</label>
+<select name="gender" required>
+<option value="">Select Gender</option>
+<option value="Male">Male</option>
+<option value="Female">Female</option>
+<option value="Other">Other</option>
 </select>
+</div>
+
+<div class="field">
+<label>Date of Birth</label>
+<input type="date" name="date_of_birth" required>
+</div>
+
+<div class="field">
+<label>Address Type</label>
+<select name="label" required>
+<option value="">Select Type</option>
+<option value="Home">Home</option>
+<option value="Work">Work</option>
+<option value="Other">Other</option>
+</select>
+</div>
+
+<div class="field full">
+<label>Full Address</label>
+<textarea name="address" required></textarea>
+</div>
 
 </div>
 
-<button type="submit" class="save-btn">
-Save Profile
-</button>
+<div class="btn-row">
+<button class="btn">Complete Profile</button>
+</div>
 
 </form>
 
 </div>
+</div>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+
+const form = document.getElementById("completeProfileForm");
+
+const mobileInput = form.querySelector('input[name="mobile"]');
+const genderInput = form.querySelector('select[name="gender"]');
+const addressInput = form.querySelector('textarea[name="address"]');
+const labelInput = form.querySelector('select[name="label"]');
+
+
+/* ================= MOBILE VALIDATION ================= */
+
+function isValidMobile(mobile){
+return /^[6-9]\d{9}$/.test(mobile);
+}
+
+
+/* ================= MOBILE INPUT RESTRICTION ================= */
+
+mobileInput.addEventListener("input", () => {
+
+mobileInput.value = mobileInput.value.replace(/\D/g,"");
+
+if(mobileInput.value.length > 10){
+mobileInput.value = mobileInput.value.slice(0,10);
+}
+
+});
+
+
+/* ================= FORM VALIDATION ================= */
+
+form.addEventListener("submit", function(e){
+
+if(!isValidMobile(mobileInput.value)){
+alert("Enter a valid 10 digit mobile number starting with 6-9.");
+mobileInput.focus();
+e.preventDefault();
+return;
+}
+
+if(!genderInput.value){
+alert("Please select gender.");
+genderInput.focus();
+e.preventDefault();
+return;
+}
+
+if(!labelInput.value){
+alert("Please select address type.");
+labelInput.focus();
+e.preventDefault();
+return;
+}
+
+if(!addressInput.value.trim()){
+alert("Address cannot be empty.");
+addressInput.focus();
+e.preventDefault();
+return;
+}
+
+});
+
+
+/* ================= INPUT UX IMPROVEMENT ================= */
+
+const inputs = form.querySelectorAll("input, select, textarea");
+
+inputs.forEach(input => {
+
+input.addEventListener("focus", ()=>{
+input.style.borderColor="#111";
+});
+
+input.addEventListener("blur", ()=>{
+input.style.borderColor="#ddd";
+});
+
+});
+
+});
+
+</script>
