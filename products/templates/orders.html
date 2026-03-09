@@ -1,1 +1,294 @@
-under work
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>My Orders | Subio Foods</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
+}
+
+body{
+background:#f5f7f9;
+padding:40px 6%;
+}
+
+/* PAGE TITLE */
+
+.page-title{
+font-size:32px;
+font-weight:600;
+margin-bottom:30px;
+color:#222;
+}
+
+/* ORDER CARD */
+
+.order-card{
+background:white;
+border-radius:12px;
+padding:25px;
+margin-bottom:25px;
+box-shadow:0 6px 18px rgba(0,0,0,0.05);
+}
+
+/* HEADER */
+
+.order-header{
+display:flex;
+justify-content:space-between;
+flex-wrap:wrap;
+margin-bottom:15px;
+}
+
+.order-header div{
+margin-bottom:8px;
+}
+
+.order-id{
+font-weight:600;
+color:#2e7d32;
+}
+
+/* STATUS */
+
+.status{
+padding:4px 10px;
+border-radius:6px;
+font-size:12px;
+font-weight:500;
+text-transform:capitalize;
+}
+
+.status.pending{
+background:#fff3cd;
+color:#856404;
+}
+
+.status.processing{
+background:#e2e3ff;
+color:#383d8b;
+}
+
+.status.shipped{
+background:#cce5ff;
+color:#004085;
+}
+
+.status.delivered{
+background:#d4edda;
+color:#155724;
+}
+
+.status.cancelled{
+background:#f8d7da;
+color:#721c24;
+}
+
+/* PRODUCTS */
+
+.products{
+border-top:1px solid #eee;
+margin-top:15px;
+padding-top:15px;
+}
+
+.product-row{
+display:flex;
+align-items:center;
+justify-content:space-between;
+margin-bottom:12px;
+}
+
+/* LEFT SIDE */
+
+.product-left{
+display:flex;
+align-items:center;
+gap:12px;
+}
+
+.product-left img{
+width:55px;
+height:55px;
+border-radius:6px;
+object-fit:cover;
+border:1px solid #eee;
+}
+
+/* TOTAL */
+
+.order-total{
+margin-top:15px;
+border-top:1px solid #eee;
+padding-top:12px;
+display:flex;
+justify-content:space-between;
+font-weight:600;
+font-size:16px;
+}
+
+/* EMPTY STATE */
+
+.empty-orders{
+text-align:center;
+margin-top:120px;
+}
+
+.empty-orders h2{
+margin-bottom:10px;
+font-size:26px;
+}
+
+.empty-orders p{
+color:#666;
+margin-bottom:20px;
+}
+
+.shop-btn{
+display:inline-block;
+padding:12px 20px;
+background:#2e7d32;
+color:white;
+border-radius:8px;
+text-decoration:none;
+font-size:14px;
+transition:0.3s;
+}
+
+.shop-btn:hover{
+background:#1b5e20;
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+.order-header{
+flex-direction:column;
+}
+
+.product-row{
+flex-direction:column;
+align-items:flex-start;
+gap:10px;
+}
+
+.order-total{
+flex-direction:column;
+gap:5px;
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1 class="page-title">My Orders</h1>
+
+{% if orders %}
+
+{% for order in orders %}
+
+<div class="order-card">
+
+<div class="order-header">
+
+<div>
+
+<p class="order-id">Order ID: #{{order.id}}</p>
+
+<p>Date: {{order.created_at|date:"d M Y, h:i A"}}</p>
+
+</div>
+
+<div>
+
+<p>Payment: {{order.payment_method|title}}</p>
+
+<span class="status {{order.status}}">
+{{order.status}}
+</span>
+
+</div>
+
+</div>
+
+
+<p><strong>Delivery Address:</strong> {{order.address}}</p>
+
+
+<div class="products">
+
+{% for item in order.items.all %}
+
+<div class="product-row">
+
+<div class="product-left">
+
+{% if item.product.image %}
+<img src="{{item.product.image.url}}">
+{% else %}
+<img src="{% static 'images/no-product.png' %}">
+{% endif %}
+
+<div>
+
+<p>{{item.product.name}}</p>
+<small>Qty: {{item.quantity}}</small>
+
+</div>
+
+</div>
+
+<p>₹{{item.price}}</p>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+
+<div class="order-total">
+
+<span>Total</span>
+<span>₹{{order.total}}</span>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+{% else %}
+
+<div class="empty-orders">
+
+<h2>No Orders Yet</h2>
+
+<p>Looks like you haven't placed any order.</p>
+
+<a href="/products/" class="shop-btn">Start Shopping</a>
+
+</div>
+
+{% endif %}
+
+</body>
+</html>

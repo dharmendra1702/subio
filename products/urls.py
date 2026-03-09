@@ -39,9 +39,11 @@ urlpatterns = [
     path("update-cart/", views.update_cart, name="update_cart"),
 
     path("cart-json/", views.cart_json, name="cart_json"),
-
+    path("checkout/", views.checkout, name="checkout"),
     # ================= ORDERS =================
     path("orders/", views.orders, name="orders"),
+    path("place-order/", views.place_order, name="place_order"),
+    path("apply-coupon/", views.apply_coupon, name="apply_coupon"),
 
     # ================= NEWSLETTER =================
     path("newsletter/", views.newsletter_subscribe, name="newsletter"),

@@ -3,6 +3,9 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
+from urllib3 import request
+import razorpay
+from django.conf import settings
 
 def home(request):
     categories = Category.objects.all()
@@ -400,13 +403,28 @@ def update_cart(request):
 
     return JsonResponse({"status":"ok"})
 
+import random
+from .models import Product
+
+@login_required
 def cart_view(request):
+
     cart = request.session.get("cart", {})
+
     total = sum(item["price"] * item["quantity"] for item in cart.values())
+
+    coupon_discount = request.session.get("coupon_discount", 0)
+
+    products = list(Product.objects.all())
+    random.shuffle(products)
+
+    recommended = products[:4]
 
     return render(request, "cart.html", {
         "cart": cart,
-        "total": total
+        "total": total,
+        "coupon_discount": coupon_discount,
+        "recommended": recommended
     })
 
 
@@ -420,7 +438,6 @@ def remove_from_cart(request, product_id):
     request.session.modified = True
 
     return redirect("cart")
-
 
 
 def cart_json(request):
@@ -693,9 +710,19 @@ def verify_email_password(request):
 
     return JsonResponse({"success": False})
 
+from .models import Order
+
 @login_required
 def orders(request):
-    return render(request,"orders.html")    
+
+    orders = Order.objects.filter(
+        user=request.user
+    ).prefetch_related("items__product").order_by("-created_at")
+
+    return render(request,"orders.html",{
+        "orders":orders
+    })
+
 
 def get_cart_count(request):
     cart = request.session.get("cart", {})
@@ -745,3 +772,153 @@ def complete_profile(request):
         return redirect("profile")
 
     return render(request, "complete_profile.html")
+
+from .models import Address, MobileNumber
+@login_required
+def checkout(request):
+
+    cart = request.session.get("cart", {})
+
+    subtotal = sum(item["price"] * item["quantity"] for item in cart.values())
+
+    gst = subtotal * 0.05
+    shipping = 40 if subtotal < 399 else 0
+    coupon_discount = request.session.get("coupon_discount", 0)
+
+    final_total = subtotal + gst + shipping - coupon_discount
+
+    # Razorpay order
+    client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+    payment = client.order.create({
+        "amount": int(final_total * 100),  # Razorpay takes paise
+        "currency": "INR",
+        "payment_capture": 1
+    })
+
+    addresses = Address.objects.filter(user=request.user)
+
+    return render(request,"checkout.html",{
+        "cart":cart,
+        "subtotal":subtotal,
+        "gst":gst,
+        "shipping":shipping,
+        "coupon_discount":coupon_discount,
+        "final_total":final_total,
+        "addresses":addresses,
+        "razorpay_order_id": payment["id"],
+        "razorpay_key": settings.RAZORPAY_KEY_ID
+    })
+
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import Order, OrderItem, Product
+
+@login_required
+def place_order(request):
+
+    if request.method == "POST":
+
+        payment = request.POST.get("payment")
+        address_id = request.POST.get("address_id")
+
+        if address_id:
+            addr = Address.objects.get(id=address_id, user=request.user)
+
+        else:
+            street = request.POST.get("address")
+            city = request.POST.get("city")
+            pincode = request.POST.get("pincode")
+            state = request.POST.get("state")
+
+            full_address = f"{street}, {city}, {state} - {pincode}"
+
+            addr = Address.objects.create(
+                user=request.user,
+                label="New Address",
+                address=full_address
+            )
+
+        address = addr.address
+
+        cart = request.session.get("cart", {})
+
+        if not cart:
+            messages.error(request, "Cart empty")
+            return redirect("cart")
+
+        subtotal = sum(item["price"] * item["quantity"] for item in cart.values())
+
+        gst = subtotal * 0.05
+        shipping = 40 if subtotal < 399 else 0
+        coupon_discount = request.session.get("coupon_discount", 0)
+
+        final_total = subtotal + gst + shipping - coupon_discount
+
+        # CREATE ORDER
+        order = Order.objects.create(
+            user=request.user,
+            address=address,
+            payment_method=payment,
+            total=final_total
+        )
+
+        # SAVE ORDER ITEMS
+        for key, item in cart.items():
+
+            product = Product.objects.get(id=key)
+
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                quantity=item["quantity"],
+                price=item["price"]
+            )
+
+        # CLEAR CART + COUPON
+        request.session["cart"] = {}
+        request.session.pop("coupon_discount", None)
+        request.session.modified = True
+
+        return redirect("orders")
+
+    return redirect("cart")
+
+from django.http import JsonResponse
+from django.utils import timezone
+from .models import Coupon
+from django.views.decorators.http import require_POST
+
+@require_POST
+def apply_coupon(request):
+
+    code = request.POST.get("code")
+
+    try:
+        coupon = Coupon.objects.get(code__iexact=code, is_active=True)
+
+        today = timezone.now().date()
+
+        if coupon.valid_from <= today <= coupon.valid_to:
+
+            request.session["coupon_discount"] = coupon.discount_amount
+
+            return JsonResponse({
+                "success": True,
+                "discount": coupon.discount_amount
+            })
+
+        else:
+            return JsonResponse({
+                "success": False,
+                "message": "Coupon expired"
+            })
+
+    except Coupon.DoesNotExist:
+
+        return JsonResponse({
+            "success": False,
+            "message": "Invalid coupon"
+        })
+

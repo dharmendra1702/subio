@@ -1,0 +1,501 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Checkout | Subio Foods</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
+}
+
+body{
+background:#f4f6f8;
+padding:40px 6%;
+}
+
+/* ===== PROGRESS BAR ===== */
+
+.steps{
+display:flex;
+justify-content:space-between;
+position:relative;
+margin-bottom:50px;
+}
+
+.steps::before{
+content:"";
+position:absolute;
+top:20px;
+left:8%;
+width:84%;
+height:3px;
+background:#ddd;
+}
+
+.step{
+flex:1;
+text-align:center;
+position:relative;
+}
+
+.step span{
+width:40px;
+height:40px;
+display:inline-flex;
+align-items:center;
+justify-content:center;
+border-radius:50%;
+background:#ddd;
+transition:.3s;
+}
+
+.step.active span{
+background:#2e7d32;
+color:white;
+}
+
+.step.completed span{
+background:#22c55e;
+color:white;
+}
+
+/* ===== LAYOUT ===== */
+
+.checkout-wrapper{
+display:flex;
+gap:40px;
+flex-wrap:wrap;
+}
+
+.checkout-form{
+flex:2;
+background:white;
+padding:30px;
+border-radius:12px;
+}
+
+.order-summary{
+flex:1;
+background:white;
+padding:25px;
+border-radius:12px;
+}
+
+/* ADDRESS */
+
+.address-card{
+border:1px solid #ddd;
+padding:12px;
+border-radius:8px;
+margin-bottom:10px;
+display:flex;
+gap:10px;
+cursor:pointer;
+}
+
+.address-card:hover{
+border-color:#2e7d32;
+}
+
+.address-card input:checked + div{
+border-left:4px solid #2e7d32;
+padding-left:8px;
+}
+
+/* BUTTON */
+
+.btn{
+margin-top:20px;
+padding:14px;
+background:#2e7d32;
+border:none;
+color:white;
+width:100%;
+border-radius:8px;
+cursor:pointer;
+}
+
+/* SUMMARY */
+
+.summary-item{
+display:flex;
+justify-content:space-between;
+margin-bottom:12px;
+align-items:center;
+}
+
+.summary-item img{
+width:45px;
+height:45px;
+border-radius:6px;
+object-fit:cover;
+margin-right:10px;
+}
+
+.product-row{
+display:flex;
+align-items:center;
+gap:10px;
+}
+
+.total{
+font-size:18px;
+font-weight:600;
+border-top:1px solid #eee;
+padding-top:10px;
+}
+
+/* ===== ADD ADDRESS ===== */
+
+#newAddressForm{
+margin-top:25px;
+padding:25px;
+background:white;
+border-radius:12px;
+border:1px solid #eee;
+box-shadow:0 8px 24px rgba(0,0,0,0.06);
+}
+
+.address-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px;
+}
+
+.address-grid input{
+padding:12px;
+border:1px solid #ddd;
+border-radius:6px;
+}
+
+.address-grid .full{
+grid-column:span 2;
+}
+
+.add-address-btn{
+margin-top:20px;
+width:100%;
+padding:14px;
+background:#444;
+border:none;
+border-radius:8px;
+color:white;
+cursor:pointer;
+}
+
+.add-address-btn:hover{
+background:#2e7d32;
+}
+
+/* SUCCESS */
+
+.success-box{
+background:#f9fafb;
+padding:20px;
+border-radius:10px;
+margin-top:20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Checkout</h1>
+
+<div class="steps">
+
+<div class="step active">
+<span>1</span>
+<p>Address</p>
+</div>
+
+<div class="step">
+<span>2</span>
+<p>Payment</p>
+</div>
+
+<div class="step">
+<span>3</span>
+<p>Complete</p>
+</div>
+
+</div>
+
+<div class="checkout-wrapper">
+
+<div class="checkout-form">
+
+<form method="POST" action="{% url 'place_order' %}">
+{% csrf_token %}
+
+<!-- STEP 1 -->
+
+<div id="step1">
+
+<h3>Select Address</h3>
+
+{% for addr in addresses %}
+
+<label class="address-card">
+
+<input type="radio" name="address_id"
+value="{{addr.id}}"
+{% if addr.is_default %}checked{% endif %}>
+
+<div>
+<strong>{{addr.label}}</strong>
+<p>{{addr.address}}</p>
+</div>
+
+</label>
+
+{% endfor %}
+
+<button type="button" class="add-address-btn" onclick="toggleAddressForm()">
++ Add New Address
+</button>
+
+<div id="newAddressForm" style="display:none">
+
+<div class="address-grid">
+
+<input type="text" name="name" placeholder="Full Name">
+<input type="text" name="phone" placeholder="Mobile Number">
+
+<input type="text" name="label" placeholder="Address Label">
+
+<input type="text" name="address" class="full" placeholder="Street Address">
+
+<input type="text" name="city" placeholder="City">
+<input type="text" name="pincode" placeholder="Pincode">
+
+<input type="text" name="state" class="full" placeholder="State">
+
+</div>
+
+</div>
+
+<button type="button" class="btn" onclick="goToPayment()">Next</button>
+
+</div>
+
+<!-- STEP 2 -->
+
+<div id="step2" style="display:none">
+
+<h3>Select Payment</h3>
+
+<label class="address-card">
+<input type="radio" name="payment" value="cod" checked>
+Cash on Delivery
+</label>
+
+<label class="address-card">
+<input type="radio" name="payment" value="razorpay">
+UPI / GPay / Card
+</label>
+
+<button type="button" class="btn" onclick="payNow()">Proceed</button>
+
+<button type="button" class="btn" style="background:#777" onclick="backToAddress()">Back</button>
+
+</div>
+
+<!-- STEP 3 -->
+
+<div id="step3" style="display:none;text-align:center">
+
+<h2 style="color:#22c55e">Order Successful 🎉</h2>
+
+<div class="success-box">
+
+<p><strong>Total Paid:</strong> ₹{{final_total}}</p>
+
+<p><strong>Payment Method:</strong> <span id="paymentMethodText"></span></p>
+
+<p><strong>Delivery Address:</strong></p>
+
+<p id="selectedAddressText"></p>
+
+</div>
+
+<a href="/" class="btn">Continue Shopping</a>
+
+</div>
+
+</form>
+
+</div>
+
+<!-- ORDER SUMMARY -->
+
+<div class="order-summary">
+
+<h3>Order Summary</h3>
+
+{% for key,item in cart.items %}
+
+<div class="summary-item">
+
+<div class="product-row">
+
+<img src="{{item.image}}">
+<span>{{item.name}} × {{item.quantity}}</span>
+
+</div>
+
+<span>₹{{item.price}}</span>
+
+</div>
+
+{% endfor %}
+
+<hr>
+
+<div class="summary-item">
+<span>Subtotal</span>
+<span>₹{{subtotal}}</span>
+</div>
+
+<div class="summary-item">
+<span>GST</span>
+<span>₹{{gst}}</span>
+</div>
+
+<div class="summary-item total">
+<span>Total</span>
+<span>₹{{final_total}}</span>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+/* ADD ADDRESS TOGGLE */
+
+function toggleAddressForm(){
+
+let form=document.getElementById("newAddressForm")
+
+form.style.display = form.style.display === "none" ? "block" : "none"
+
+}
+
+/* STEP NAVIGATION */
+
+function goToPayment(){
+
+document.getElementById("step1").style.display="none"
+document.getElementById("step2").style.display="block"
+
+document.querySelectorAll(".step")[0].classList.remove("active")
+document.querySelectorAll(".step")[0].classList.add("completed")
+
+document.querySelectorAll(".step")[1].classList.add("active")
+
+}
+
+function backToAddress(){
+
+document.getElementById("step2").style.display="none"
+document.getElementById("step1").style.display="block"
+
+document.querySelectorAll(".step")[1].classList.remove("active")
+document.querySelectorAll(".step")[0].classList.remove("completed")
+document.querySelectorAll(".step")[0].classList.add("active")
+
+}
+
+/* PAYMENT */
+
+function payNow(){
+
+let payment=document.querySelector('input[name="payment"]:checked').value
+let address=document.querySelector('input[name="address_id"]:checked')
+
+if(!address){
+
+alert("Please select address")
+return
+
+}
+
+document.getElementById("selectedAddressText").innerText=address.parentElement.innerText
+
+if(payment==="cod"){
+
+document.getElementById("paymentMethodText").innerText="Cash on Delivery"
+completeStep()
+
+}
+
+else{
+
+document.getElementById("paymentMethodText").innerText="Online Payment"
+
+var options={
+
+"key":"{{razorpay_key}}",
+"amount":"{{final_total|floatformat:0}}00",
+"currency":"INR",
+"name":"Subio Foods",
+"description":"Order Payment",
+"order_id":"{{razorpay_order_id}}",
+
+"handler":function(response){
+
+completeStep()
+
+}
+
+};
+
+var rzp=new Razorpay(options)
+rzp.open()
+
+}
+
+}
+
+/* COMPLETE */
+
+function completeStep(){
+
+document.getElementById("step2").style.display="none"
+document.getElementById("step3").style.display="block"
+
+document.querySelectorAll(".step")[1].classList.remove("active")
+document.querySelectorAll(".step")[1].classList.add("completed")
+
+document.querySelectorAll(".step")[2].classList.add("active")
+
+/* submit order to backend after 2 seconds */
+
+setTimeout(function(){
+
+document.querySelector("form").submit()
+
+},2000)
+
+}
+
+</script>
+
+</body>
+</html>

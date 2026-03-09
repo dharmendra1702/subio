@@ -10,6 +10,7 @@
 <div class="cart-container">
 
 <!-- ================= CART ITEMS ================= -->
+
 <div class="cart-items" id="cartItems">
 
 {% for key,item in cart.items %}
@@ -64,6 +65,11 @@ Remove
 </div>
 
 <div class="summary-row">
+<span>GST (5%)</span>
+<span>₹<span id="gst">0</span></span>
+</div>
+
+<div class="summary-row">
 <span>Shipping</span>
 <span id="shipping">
 {% if total < 399 %}
@@ -74,6 +80,18 @@ FREE
 </span>
 </div>
 
+<div class="summary-row">
+<span>Coupon</span>
+<span id="couponDiscount">-₹{{coupon_discount|default:0}}</span>
+</div>
+
+<div id="freeDeliveryText" style="margin:10px 0;font-weight:600;"></div>
+
+<div class="coupon-box">
+<input type="text" id="couponInput" placeholder="Enter coupon code">
+<button onclick="applyCoupon()">Apply</button>
+</div>
+
 <hr>
 
 <div class="summary-row total">
@@ -81,9 +99,9 @@ FREE
 <span>₹<span id="finalTotal">{{total}}</span></span>
 </div>
 
-<button class="checkout-btn">
-Proceed to Checkout
-</button>
+<a href="{% url 'checkout' %}">
+<button class="checkout-btn">Proceed to Checkout</button>
+</a>
 
 </div>
 
@@ -92,17 +110,62 @@ Proceed to Checkout
 {% else %}
 
 <div class="empty-cart">
+
 <h2>Your cart is empty 🛒</h2>
 
 <a href="{% url 'products' %}" class="shop-btn">
 Continue Shopping
 </a>
+
 </div>
 
 {% endif %}
 
 </section>
 
+<div class="mobile-checkout-bar">
+    <div class="mobile-total">
+        Total: ₹<span id="mobileTotal">{{total}}</span>
+    </div>
+
+    <a href="{% url 'checkout' %}">
+        <button class="mobile-checkout-btn">
+            Checkout
+        </button>
+    </a>
+</div>
+
+{% if recommended %}
+
+<section class="suggest-section">
+
+<h2>You may also like</h2>
+
+<div class="suggest-products">
+
+{% for p in recommended %}
+
+<div class="suggest-card">
+
+<img src="{{p.image.url}}">
+
+<h4>{{p.name}}</h4>
+
+<p>₹{{p.price}}</p>
+
+<button onclick="addSuggested('{{p.id}}')">
+Add to Cart
+</button>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</section>
+
+{% endif %}
 
 <!-- ================= CART DRAWER ================= -->
 
@@ -121,8 +184,6 @@ Continue Shopping
 
 
 <style>
-
-/* Drawer */
 
 .cart-overlay{
 position:fixed;
@@ -164,53 +225,123 @@ margin-bottom:20px;
 
 </style>
 
-
 <script>
 
-function updateCart(productId, action){
+const CartManager = {
 
-let qtyEl = document.getElementById("qty-"+productId)
-let itemTotalEl = document.getElementById("itemtotal-"+productId)
+GST_RATE:0.05,
+FREE_DELIVERY_LIMIT:399,
+DELIVERY_CHARGE:40,
 
-let currentQty = parseInt(qtyEl.innerText)
+couponDiscount:0,
 
-let newQty = currentQty
+init(){
 
-if(action === "increase") newQty++
-if(action === "decrease") newQty--
+this.cacheDom()
+this.bindEvents()
+this.recalculate()
 
-if(newQty < 0) newQty = 0
+},
 
-/* ---------- INSTANT UI UPDATE ---------- */
+cacheDom(){
 
-if(newQty === 0){
+this.cartItems=document.getElementById("cartItems")
+this.subtotalEl=document.getElementById("subtotal")
+this.gstEl=document.getElementById("gst")
+this.shippingEl=document.getElementById("shipping")
+this.totalEl=document.getElementById("finalTotal")
+this.mobileTotal=document.getElementById("mobileTotal")
+this.couponEl=document.getElementById("couponDiscount")
+this.freeText=document.getElementById("freeDeliveryText")
 
-document.getElementById("item-"+productId).remove()
+},
 
-}else{
+bindEvents(){
 
-qtyEl.innerText = newQty
+if(this.cartItems){
+
+this.cartItems.addEventListener("click",(e)=>{
+
+if(e.target.dataset.action){
+
+const id=e.target.dataset.id
+const action=e.target.dataset.action
+
+this.updateCart(id,action)
 
 }
 
-/* update item price instantly */
+})
 
-let price = parseFloat(itemTotalEl.dataset.price)
+}
 
-itemTotalEl.innerText = (price * newQty).toFixed(2)
+},
 
-/* update totals instantly */
+getCookie(name){
 
-recalculateCart()
+let value=null
 
-/* ---------- SERVER UPDATE (BACKGROUND) ---------- */
+if(document.cookie && document.cookie!==''){
+
+document.cookie.split(";").forEach(cookie=>{
+
+cookie=cookie.trim()
+
+if(cookie.startsWith(name+"=")){
+
+value=decodeURIComponent(cookie.substring(name.length+1))
+
+}
+
+})
+
+}
+
+return value
+
+},
+
+updateCart(productId,action){
+
+const qtyEl=document.getElementById(`qty-${productId}`)
+const totalEl=document.getElementById(`itemtotal-${productId}`)
+const card=document.getElementById(`item-${productId}`)
+
+if(!qtyEl || !totalEl) return
+
+let qty=parseInt(qtyEl.innerText)
+
+if(action==="increase") qty++
+if(action==="decrease") qty--
+if(action==="add") qty++
+
+if(qty<=0){
+
+card?.remove()
+
+}else{
+
+qtyEl.innerText=qty
+
+const price=parseFloat(totalEl.dataset.price)
+totalEl.innerText=(price*qty).toFixed(2)
+
+}
+
+this.recalculate()
+
+this.syncServer(productId,action)
+
+},
+
+syncServer(productId,action){
 
 fetch("/update-cart/",{
 
 method:"POST",
 
 headers:{
-"X-CSRFToken":"{{csrf_token}}",
+"X-CSRFToken":this.getCookie("csrftoken"),
 "Content-Type":"application/x-www-form-urlencoded"
 },
 
@@ -218,50 +349,196 @@ body:`product_id=${productId}&action=${action}`
 
 }).catch(()=>{})
 
-}
+},
 
+recalculate(){
 
-/* ================= RECALCULATE TOTAL ================= */
-function recalculateCart(){
-
-let subtotal = 0
+let subtotal=0
 
 document.querySelectorAll(".item-total span").forEach(el=>{
-subtotal += Number(el.innerText)
+
+subtotal+=parseFloat(el.innerText)
+
 })
 
-document.getElementById("subtotal").innerText = subtotal.toFixed(2)
+const gst=subtotal*this.GST_RATE
 
-if(subtotal < 399){
+let shipping=0
 
-document.getElementById("shipping").innerText = "₹40"
-document.getElementById("finalTotal").innerText = (subtotal + 40).toFixed(2)
+if(subtotal>0 && subtotal<this.FREE_DELIVERY_LIMIT){
+
+shipping=this.DELIVERY_CHARGE
+
+}
+
+const final=subtotal+gst+shipping-this.couponDiscount
+
+if(this.subtotalEl) this.subtotalEl.innerText=subtotal.toFixed(2)
+if(this.gstEl) this.gstEl.innerText=gst.toFixed(2)
+
+if(this.shippingEl){
+
+this.shippingEl.innerText = shipping===0 && subtotal!==0 ? "FREE" : "₹"+shipping
+
+}
+
+if(this.totalEl) this.totalEl.innerText=final.toFixed(2)
+if(this.mobileTotal) this.mobileTotal.innerText=final.toFixed(2)
+
+this.updateFreeDeliveryMessage(subtotal)
+
+},
+
+updateFreeDeliveryMessage(subtotal){
+
+if(!this.freeText) return
+
+if(subtotal>=this.FREE_DELIVERY_LIMIT){
+
+this.freeText.innerText="🎉 You unlocked FREE delivery!"
+
+}else if(subtotal>0){
+
+const remaining=this.FREE_DELIVERY_LIMIT-subtotal
+
+this.freeText.innerHTML=
+`🚚 Add <span style="color:#22c55e;font-weight:600">₹${remaining.toFixed(2)}</span> more for FREE delivery`
 
 }else{
 
-document.getElementById("shipping").innerText = "FREE"
-document.getElementById("finalTotal").innerText = subtotal.toFixed(2)
+this.freeText.innerText=""
+
+}
+
+},
+
+applyCoupon(){
+
+const input=document.getElementById("couponInput")
+
+if(!input) return
+
+const code=input.value.trim()
+
+fetch("/apply-coupon/",{
+
+method:"POST",
+
+headers:{
+"X-CSRFToken":this.getCookie("csrftoken"),
+"Content-Type":"application/x-www-form-urlencoded"
+},
+
+body:`code=${code}`
+
+})
+
+.then(res=>res.json())
+
+.then(data=>{
+
+if(data.success){
+
+this.couponDiscount=data.discount
+
+if(this.couponEl){
+
+this.couponEl.innerText="-₹"+data.discount
+
+}
+
+this.recalculate()
+
+alert("Coupon applied successfully 🎉")
+
+}else{
+
+alert(data.message)
+
+}
+
+})
+
+},
+
+addSuggested(productId,btn){
+
+fetch("/update-cart/",{
+
+method:"POST",
+
+headers:{
+"X-CSRFToken":this.getCookie("csrftoken"),
+"Content-Type":"application/x-www-form-urlencoded"
+},
+
+body:`product_id=${productId}&action=add`
+
+})
+.then(()=>{
+
+if(btn){
+
+btn.innerText="Added ✓"
+btn.style.background="#16a34a"
+
+setTimeout(()=>{
+btn.innerText="Add to Cart"
+btn.style.background="#2e7d32"
+},1200)
+
+}
+
+})
+
+},
+
+openDrawer(){
+
+document.getElementById("cartDrawer")?.classList.add("open")
+document.getElementById("cartOverlay")?.classList.add("show")
+
+},
+
+closeDrawer(){
+
+document.getElementById("cartDrawer")?.classList.remove("open")
+document.getElementById("cartOverlay")?.classList.remove("show")
 
 }
 
 }
 
-/* ================= CART DRAWER ================= */
+
+/* INIT */
+
+document.addEventListener("DOMContentLoaded",()=>{
+
+CartManager.init()
+
+})
+
+
+/* GLOBAL FUNCTIONS (HTML compatibility) */
+
+function updateCart(id,action){
+CartManager.updateCart(id,action)
+}
+
+function applyCoupon(){
+CartManager.applyCoupon()
+}
 
 function openDrawer(){
-
-document.getElementById("cartDrawer").classList.add("open")
-
-document.getElementById("cartOverlay").classList.add("show")
-
+CartManager.openDrawer()
 }
 
 function closeDrawer(){
+CartManager.closeDrawer()
+}
 
-document.getElementById("cartDrawer").classList.remove("open")
-
-document.getElementById("cartOverlay").classList.remove("show")
-
+function addSuggested(id){
+CartManager.addSuggested(id,event.target)
 }
 
 </script>

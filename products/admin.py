@@ -53,3 +53,16 @@ from .models import Category
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name',)
+
+
+from django.contrib import admin
+from .models import Coupon
+
+@admin.register(Coupon)
+class CouponAdmin(admin.ModelAdmin):
+    list_display = ("code","discount_amount","valid_from","valid_to","is_active")
+
+from .models import Order,OrderItem
+
+admin.site.register(Order)
+admin.site.register(OrderItem)
