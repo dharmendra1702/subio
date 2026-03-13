@@ -1,6 +1,125 @@
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/cart.css' %}">
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Shopping Cart | Subio Foods</title>
+
+<link rel="stylesheet" href="{% static 'css/cart.css' %}">
+<link rel="stylesheet" href="{% static 'css/header_footer.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+
+</head>
+<body>
+<header class="navbar">
+
+  <!-- LEFT -->
+  <div class="nav-left">
+    <a href="{% url 'home' %}">
+  <img src="{% static 'images/icons/logo.png' %}" class="logo-img">
+</a>
+  </div>
+
+  <!-- CENTER -->
+  <nav class="nav-center">
+    <a href="{% url 'home' %}">About</a>
+    <a href="{% url 'products' %}">Products</a>
+    <a href="#contact">Contact</a>
+  </nav>
+
+  <!-- RIGHT -->
+<div class="nav-right">
+
+
+  <!-- ACCOUNT DROPDOWN -->
+  <div class="account-wrap">
+
+    <button class="account-btn" id="accountBtn">Account</button>
+
+    <div class="account-dropdown" id="accountDropdown">
+
+      {% if user.is_authenticated %}
+
+      <div class="account-user">
+      Hi, {{ user.username }} 👋 
+      </div>
+
+      {% if user.is_staff %}
+        <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+      {% else %}
+        <a href="{% url 'profile' %}">Profile</a>
+
+        <a href="{% url 'orders' %}">My Orders</a>
+      {% endif %}
+
+      <a href="#" id="logoutBtn">Logout</a>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+  <!-- mobile hamburger -->
+  <div class="hamburger" id="hamburger">
+  <span></span>
+  <span></span>
+  <span></span>
+</div>
+
+</div>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+
+  <a href="{% url 'home' %}">About</a>
+  <a href="{% url 'products' %}">Products</a>
+  <a href="#contact">Contact</a> 
+
+  <!-- MOBILE ACCOUNT -->
+
+  <div class="mobile-account">
+
+    <div id="mobileAccountBtn" class="mobile-account-btn">
+      Account ▾
+    </div>
+
+    <div id="mobileAccountDropdown" class="mobile-account-dropdown">
+
+      {% if user.is_authenticated %}
+
+        <div class="account-user">
+        Hi, {{ user.username }} 👋
+        </div>
+
+        {% if user.is_staff %}
+          <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+        {% else %}
+          <a href="{% url 'profile' %}">Profile</a>
+
+          <a href="{% url 'orders' %}">My Orders</a>
+        {% endif %}
+
+        <a href="#" id="logoutBtnMobile">Logout</a>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>
+
+</header>
+
+<main>
 <section class="cart-page">
 
 <h1 class="cart-title">🛒 Your Shopping Cart</h1>
@@ -17,7 +136,7 @@
 <div class="cart-card" id="item-{{key}}">
 
 <div class="cart-img">
-<img src="{{item.image}}">
+<img src="{{item.image}}" alt="{{item.name}}">
 </div>
 
 <div class="cart-details">
@@ -38,7 +157,7 @@
 
 <p class="item-total">
 ₹<span id="itemtotal-{{key}}" data-price="{{item.price}}">
-{{ item.price|floatformat:2 }}
+{{ item.subtotal|floatformat:2 }}
 </span>
 </p>
 
@@ -80,17 +199,7 @@ FREE
 </span>
 </div>
 
-<div class="summary-row">
-<span>Coupon</span>
-<span id="couponDiscount">-₹{{coupon_discount|default:0}}</span>
-</div>
-
 <div id="freeDeliveryText" style="margin:10px 0;font-weight:600;"></div>
-
-<div class="coupon-box">
-<input type="text" id="couponInput" placeholder="Enter coupon code">
-<button onclick="applyCoupon()">Apply</button>
-</div>
 
 <hr>
 
@@ -123,17 +232,20 @@ Continue Shopping
 
 </section>
 
-<div class="mobile-checkout-bar">
-    <div class="mobile-total">
-        Total: ₹<span id="mobileTotal">{{total}}</span>
-    </div>
+<!-- ================= MOBILE BAR ================= -->
 
-    <a href="{% url 'checkout' %}">
-        <button class="mobile-checkout-btn">
-            Checkout
-        </button>
-    </a>
+<div class="mobile-checkout-bar">
+<div class="mobile-total">
+Total: ₹<span id="mobileTotal">{{total}}</span>
 </div>
+
+<a href="{% url 'checkout' %}">
+<button class="mobile-checkout-btn">
+Checkout
+</button>
+</a>
+</div>
+
 
 {% if recommended %}
 
@@ -147,7 +259,7 @@ Continue Shopping
 
 <div class="suggest-card">
 
-<img src="{{p.image.url}}">
+<img src="{{p.image.url}}" alt="{{p.name}}">
 
 <h4>{{p.name}}</h4>
 
@@ -167,64 +279,125 @@ Add to Cart
 
 {% endif %}
 
-<!-- ================= CART DRAWER ================= -->
+</main>
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
 
-<div id="cartOverlay" class="cart-overlay" onclick="closeDrawer()"></div>
+<div class="footer-inner">
 
-<div id="cartDrawer" class="cart-drawer">
+<!-- BRAND -->
 
-<div class="drawer-header">
-<h3>Your Cart</h3>
-<button onclick="closeDrawer()">✕</button>
+<div class="footer-col brand">
+
+  <div class="brand-row">
+    <img src="{% static 'images/icons/logo.png' %}" alt="Subio Foods Logo" class="footer-logo">
+  </div>
+
+  <p class="brand-text">
+    Naturally grown millets & spices  from trusted farmers to healthy homes.
+  </p>
+
+  <div class="social">
+    <div>
+  <a href="#" style="display:inline-block;margin-right:12px;">
+    <img src="{% static 'images/facebook.png' %}" width="20">
+  </a>
+
+  <a href="#" style="display:inline-block;margin-right:12px;">
+    <img src="{% static 'images/instagram.png' %}" width="20">
+  </a>
+
+  <a href="#" style="display:inline-block;">
+    <img src="{% static 'images/twitter.png' %}" width="20">
+  </a>
+</div>
 </div>
 
-<div id="drawerItems"></div>
+</div>
+
+<!-- COMPANY -->
+
+<div class="footer-col">
+  <h4>Company</h4>
+  <a href="{% url 'home' %}">About Us</a>
+  <a href="{% url 'products' %}">Products</a>
+  <a href="#contact">Contact</a>
+</div>
+
+<!-- SUPPORT -->
+
+<div class="footer-col">
+  <h4>Support</h4>
+  <a href="#">FAQs</a>
+  <a href="#">Shipping Policy</a>
+  <a href="#">Terms & Conditions</a>
+  <a href="#">Privacy Policy</a>
+</div>
+
+<!-- NEWSLETTER -->
+
+<div class="footer-col offers">
+
+<h4>Get Exclusive Offers</h4>
+
+<form class="offer-form" id="newsletterForm"
+      data-url="{% url 'newsletter' %}"
+      method="post">
+
+{% csrf_token %}
+
+<input type="email"
+       id="newsletterEmail"
+       name="email"
+       placeholder="Enter your email"
+       required>
+
+<button type="submit">Subscribe</button>
+
+</form>
+
+<p id="newsletterMsg"></p>
+
+<div class="contact">
+<p><strong>Contact</strong></p>
+<p>subiofoods@gmail.com</p>
+<p>+91 96068 23003</p>
+</div>
 
 </div>
 
+</div>
 
-<style>
+<div class="footer-bottom">
+<p>© 2026 Subio Foods. All rights reserved.</p>
+</div>
 
-.cart-overlay{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.4);
-display:none;
-z-index:2000;
-}
+</footer>
 
-.cart-overlay.show{
-display:block;
-}
+<!-- LOGOUT MODAL -->
+<div id="logoutModal" class="logout-modal">
 
-.cart-drawer{
-position:fixed;
-right:-420px;
-top:0;
-height:100%;
-width:380px;
-background:white;
-box-shadow:-10px 0 40px rgba(0,0,0,0.3);
-transition:0.35s;
-z-index:3000;
-padding:20px;
-}
+  <div class="logout-box">
+    <h3>Logout?</h3>
+    <p>Are you sure you want to logout?</p>
 
-.cart-drawer.open{
-right:0;
-}
+    <div class="logout-actions">
+      <button id="cancelLogout">Cancel</button>
+      <button id="confirmLogout">Logout</button>
+    </div>
+  </div>
 
-.drawer-header{
-display:flex;
-justify-content:space-between;
-margin-bottom:20px;
-}
+</div>
 
-</style>
+<form id="logoutForm" method="POST" action="{% url 'logout' %}">
+    {% csrf_token %}
+</form>
 
+
+<script src="{% static 'js/navbar.js' %}"></script>
+<script src="{% static 'js/scroll.js' %}"></script>
+<script src="{% static 'js/shop.js' %}"></script>
+<script src="{% static 'js/cart.js' %}"></script>
 <script>
 
 const CartManager = {
@@ -233,47 +406,21 @@ GST_RATE:0.05,
 FREE_DELIVERY_LIMIT:399,
 DELIVERY_CHARGE:40,
 
-couponDiscount:0,
-
 init(){
 
 this.cacheDom()
-this.bindEvents()
 this.recalculate()
 
 },
 
 cacheDom(){
 
-this.cartItems=document.getElementById("cartItems")
 this.subtotalEl=document.getElementById("subtotal")
 this.gstEl=document.getElementById("gst")
 this.shippingEl=document.getElementById("shipping")
 this.totalEl=document.getElementById("finalTotal")
 this.mobileTotal=document.getElementById("mobileTotal")
-this.couponEl=document.getElementById("couponDiscount")
 this.freeText=document.getElementById("freeDeliveryText")
-
-},
-
-bindEvents(){
-
-if(this.cartItems){
-
-this.cartItems.addEventListener("click",(e)=>{
-
-if(e.target.dataset.action){
-
-const id=e.target.dataset.id
-const action=e.target.dataset.action
-
-this.updateCart(id,action)
-
-}
-
-})
-
-}
 
 },
 
@@ -288,9 +435,7 @@ document.cookie.split(";").forEach(cookie=>{
 cookie=cookie.trim()
 
 if(cookie.startsWith(name+"=")){
-
 value=decodeURIComponent(cookie.substring(name.length+1))
-
 }
 
 })
@@ -312,8 +457,7 @@ if(!qtyEl || !totalEl) return
 let qty=parseInt(qtyEl.innerText)
 
 if(action==="increase") qty++
-if(action==="decrease") qty--
-if(action==="add") qty++
+if(action==="decrease") qty=Math.max(0,qty-1)
 
 if(qty<=0){
 
@@ -347,7 +491,7 @@ headers:{
 
 body:`product_id=${productId}&action=${action}`
 
-}).catch(()=>{})
+})
 
 },
 
@@ -356,9 +500,7 @@ recalculate(){
 let subtotal=0
 
 document.querySelectorAll(".item-total span").forEach(el=>{
-
-subtotal+=parseFloat(el.innerText)
-
+subtotal += parseFloat(el.innerText) || 0
 })
 
 const gst=subtotal*this.GST_RATE
@@ -366,19 +508,21 @@ const gst=subtotal*this.GST_RATE
 let shipping=0
 
 if(subtotal>0 && subtotal<this.FREE_DELIVERY_LIMIT){
-
 shipping=this.DELIVERY_CHARGE
-
 }
 
-const final=subtotal+gst+shipping-this.couponDiscount
+const final=subtotal+gst+shipping
 
 if(this.subtotalEl) this.subtotalEl.innerText=subtotal.toFixed(2)
 if(this.gstEl) this.gstEl.innerText=gst.toFixed(2)
 
 if(this.shippingEl){
 
-this.shippingEl.innerText = shipping===0 && subtotal!==0 ? "FREE" : "₹"+shipping
+if(shipping===0 && subtotal!==0){
+this.shippingEl.innerText="FREE"
+}else{
+this.shippingEl.innerText="₹"+shipping
+}
 
 }
 
@@ -399,7 +543,7 @@ this.freeText.innerText="🎉 You unlocked FREE delivery!"
 
 }else if(subtotal>0){
 
-const remaining=this.FREE_DELIVERY_LIMIT-subtotal
+const remaining=Math.max(0,this.FREE_DELIVERY_LIMIT-subtotal)
 
 this.freeText.innerHTML=
 `🚚 Add <span style="color:#22c55e;font-weight:600">₹${remaining.toFixed(2)}</span> more for FREE delivery`
@@ -412,56 +556,7 @@ this.freeText.innerText=""
 
 },
 
-applyCoupon(){
-
-const input=document.getElementById("couponInput")
-
-if(!input) return
-
-const code=input.value.trim()
-
-fetch("/apply-coupon/",{
-
-method:"POST",
-
-headers:{
-"X-CSRFToken":this.getCookie("csrftoken"),
-"Content-Type":"application/x-www-form-urlencoded"
-},
-
-body:`code=${code}`
-
-})
-
-.then(res=>res.json())
-
-.then(data=>{
-
-if(data.success){
-
-this.couponDiscount=data.discount
-
-if(this.couponEl){
-
-this.couponEl.innerText="-₹"+data.discount
-
-}
-
-this.recalculate()
-
-alert("Coupon applied successfully 🎉")
-
-}else{
-
-alert(data.message)
-
-}
-
-})
-
-},
-
-addSuggested(productId,btn){
+addSuggested(productId){
 
 fetch("/update-cart/",{
 
@@ -474,71 +569,27 @@ headers:{
 
 body:`product_id=${productId}&action=add`
 
-})
-.then(()=>{
-
-if(btn){
-
-btn.innerText="Added ✓"
-btn.style.background="#16a34a"
-
-setTimeout(()=>{
-btn.innerText="Add to Cart"
-btn.style.background="#2e7d32"
-},1200)
-
-}
-
+}).then(()=>{
+location.reload()
 })
 
-},
-
-openDrawer(){
-
-document.getElementById("cartDrawer")?.classList.add("open")
-document.getElementById("cartOverlay")?.classList.add("show")
-
-},
-
-closeDrawer(){
-
-document.getElementById("cartDrawer")?.classList.remove("open")
-document.getElementById("cartOverlay")?.classList.remove("show")
-
 }
 
 }
-
-
-/* INIT */
 
 document.addEventListener("DOMContentLoaded",()=>{
-
 CartManager.init()
-
 })
-
-
-/* GLOBAL FUNCTIONS (HTML compatibility) */
 
 function updateCart(id,action){
 CartManager.updateCart(id,action)
 }
 
-function applyCoupon(){
-CartManager.applyCoupon()
-}
-
-function openDrawer(){
-CartManager.openDrawer()
-}
-
-function closeDrawer(){
-CartManager.closeDrawer()
-}
-
 function addSuggested(id){
-CartManager.addSuggested(id,event.target)
+CartManager.addSuggested(id)
 }
 
 </script>
+
+</body>
+</html>

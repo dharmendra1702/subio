@@ -1,0 +1,119 @@
+{% load static %}
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+
+<div class="footer-inner">
+
+<!-- BRAND -->
+
+<div class="footer-col brand">
+
+  <div class="brand-row">
+    <img src="{% static 'images/icons/logo.png' %}" alt="Subio Foods Logo" class="footer-logo">
+  </div>
+
+  <p class="brand-text">
+    Naturally grown millets & spices  from trusted farmers to healthy homes.
+  </p>
+
+  <div class="social">
+    <div>
+  <a href="#" style="display:inline-block;margin-right:12px;">
+    <img src="{% static 'images/facebook.png' %}" width="20">
+  </a>
+
+  <a href="#" style="display:inline-block;margin-right:12px;">
+    <img src="{% static 'images/instagram.png' %}" width="20">
+  </a>
+
+  <a href="#" style="display:inline-block;">
+    <img src="{% static 'images/twitter.png' %}" width="20">
+  </a>
+</div>
+</div>
+
+</div>
+
+<!-- COMPANY -->
+
+<div class="footer-col">
+  <h4>Company</h4>
+  <a href="{% url 'home' %}">About Us</a>
+  <a href="{% url 'products' %}">Products</a>
+  <a href="#contact">Contact</a>
+</div>
+
+<!-- SUPPORT -->
+
+<div class="footer-col">
+  <h4>Support</h4>
+  <a href="#">FAQs</a>
+  <a href="#">Shipping Policy</a>
+  <a href="#">Terms & Conditions</a>
+  <a href="#">Privacy Policy</a>
+</div>
+
+<!-- NEWSLETTER -->
+
+<div class="footer-col offers">
+
+<h4>Get Exclusive Offers</h4>
+
+<form class="offer-form" id="newsletterForm"
+      data-url="{% url 'newsletter' %}"
+      method="post">
+
+{% csrf_token %}
+
+<input type="email"
+       id="newsletterEmail"
+       name="email"
+       placeholder="Enter your email"
+       required>
+
+<button type="submit">Subscribe</button>
+
+</form>
+
+<p id="newsletterMsg"></p>
+
+<div class="contact">
+<p><strong>Contact</strong></p>
+<p>subiofoods@gmail.com</p>
+<p>+91 96068 23003</p>
+</div>
+
+</div>
+
+</div>
+
+<div class="footer-bottom">
+<p>© 2026 Subio Foods. All rights reserved.</p>
+</div>
+
+</footer>
+
+<!-- LOGOUT MODAL -->
+<div id="logoutModal" class="logout-modal">
+
+  <div class="logout-box">
+    <h3>Logout?</h3>
+    <p>Are you sure you want to logout?</p>
+
+    <div class="logout-actions">
+      <button id="cancelLogout">Cancel</button>
+      <button id="confirmLogout">Logout</button>
+    </div>
+  </div>
+
+</div>
+
+<form id="logoutForm" method="POST" action="{% url 'logout' %}">
+    {% csrf_token %}
+</form>
+
+</div>
+
+<script src="{% static 'js/navbar.js' %}"></script>
+<script src="{% static 'js/scroll.js' %}"></script>
+<script src="{% static 'js/shop.js' %}"></script>

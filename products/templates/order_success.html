@@ -1,0 +1,366 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Order Successful | Subio Foods</title>
+
+<link rel="stylesheet" href="{% static 'css/header_footer.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+/* PAGE LAYOUT */
+
+html,body{
+height:100%;
+margin:0;
+}
+
+body{
+font-family:Inter;
+background:#f6f7fb;
+
+display:flex;
+flex-direction:column;
+min-height:100vh;
+}
+
+/* MAIN */
+
+main{
+flex:1;
+max-width:900px;
+margin:auto;
+padding:120px 20px 60px;
+}
+
+/* SUCCESS CARD */
+
+.success-card{
+background:white;
+padding:40px;
+border-radius:16px;
+box-shadow:0 10px 40px rgba(0,0,0,.08);
+}
+
+/* CHECK ICON */
+
+.check{
+width:80px;
+height:80px;
+background:#16a34a;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:40px;
+color:white;
+margin:auto;
+margin-bottom:20px;
+}
+
+.center{
+text-align:center;
+}
+
+.order-id{
+color:#16a34a;
+font-weight:600;
+margin-top:8px;
+}
+
+/* ORDER TRACKING */
+
+.tracking{
+margin-top:30px;
+display:flex;
+justify-content:space-between;
+position:relative;
+}
+
+.tracking::before{
+content:"";
+position:absolute;
+top:14px;
+left:0;
+width:100%;
+height:3px;
+background:#e5e7eb;
+z-index:1;
+}
+
+.step{
+position:relative;
+z-index:2;
+text-align:center;
+flex:1;
+}
+
+.circle{
+width:28px;
+height:28px;
+border-radius:50%;
+background:#16a34a;
+color:white;
+display:flex;
+align-items:center;
+justify-content:center;
+margin:auto;
+font-size:14px;
+}
+
+.step span{
+display:block;
+font-size:12px;
+margin-top:6px;
+}
+
+/* ORDER ITEMS */
+
+.items{
+margin-top:30px;
+}
+
+.item{
+display:flex;
+align-items:center;
+margin-bottom:15px;
+}
+
+.item img{
+width:50px;
+height:50px;
+border-radius:6px;
+object-fit:cover;
+margin-right:12px;
+}
+
+.item-name{
+flex:1;
+}
+
+.item-price{
+font-weight:600;
+}
+
+/* SUMMARY */
+
+.summary{
+margin-top:25px;
+border-top:1px solid #eee;
+padding-top:15px;
+}
+
+.row{
+display:flex;
+justify-content:space-between;
+margin-bottom:8px;
+}
+
+/* BUTTONS */
+
+.buttons{
+margin-top:25px;
+display:flex;
+flex-wrap:wrap;
+gap:10px;
+justify-content:center;
+}
+
+.btn{
+padding:12px 18px;
+border-radius:8px;
+text-decoration:none;
+font-size:14px;
+}
+
+.primary{
+background:#16a34a;
+color:white;
+}
+
+.secondary{
+background:#f3f4f6;
+color:#111;
+}
+
+/* CONFETTI */
+
+canvas{
+position:fixed;
+top:0;
+left:0;
+pointer-events:none;
+}
+
+.navbar{
+    width:90%;
+    backdrop-filter: blur(1px);
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+{% include "header.html" %}
+
+<canvas id="confetti"></canvas>
+
+<main>
+
+<div class="success-card">
+
+<div class="center">
+
+<div class="check">✓</div>
+
+<h2>Order Placed Successfully</h2>
+
+<p class="order-id">
+Order ID : {{order.order_id}}
+</p>
+
+<p>Payment Status :<strong>{% if order.payment_status == "Paid" %}Paid ✅{% else %}Pending{% endif %}</strong></p>
+
+</div>
+
+<!-- ORDER TRACKING -->
+
+<div class="tracking">
+
+<div class="step">
+<div class="circle">✓</div>
+<span>Order Placed</span>
+</div>
+
+<div class="step">
+<div class="circle">2</div>
+<span>Processing</span>
+</div>
+
+<div class="step">
+<div class="circle">3</div>
+<span>Shipped</span>
+</div>
+
+<div class="step">
+<div class="circle">4</div>
+<span>Delivered</span>
+</div>
+
+</div>
+
+<!-- ITEMS -->
+
+<div class="items">
+
+<h3>Ordered Items</h3>
+
+{% for item in items %}
+
+<div class="item">
+
+<img src="{{item.product.image.url}}">
+
+<div class="item-name">
+
+<strong>{{item.product.name}}</strong>
+
+<br>
+
+<small>
+Qty : {{item.quantity}} × ₹{{item.price}}
+</small>
+
+</div>
+
+<div class="item-price">
+₹{{item.price|floatformat:2}}
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+<!-- SUMMARY -->
+
+<div class="summary">
+
+<div class="row">
+<span>Total Amount</span>
+<span>₹{{order.total}}</span>
+</div>
+
+<div class="row">
+<span>Payment Method</span>
+<span>{{order.payment_method|upper}}</span>
+</div>
+
+</div>
+
+<!-- BUTTONS -->
+
+<div class="buttons">
+
+<a href="{% url 'products' %}" class="btn primary">
+Continue Shopping
+</a>
+
+<a href="{% url 'orders' %}" class="btn secondary">
+View Orders
+</a>
+
+<a href="{% url 'download_invoice' order.order_id %}" class="btn secondary">
+Download GST Invoice
+</a>
+
+<a href="https://wa.me/919606823003?text=Hello%20Subio%20Foods,%20I%20placed%20order%20ID%20{{order.id}}" class="btn secondary">
+WhatsApp Support
+</a>
+
+</div>
+
+</div>
+
+</main>
+
+<!-- FOOTER -->
+{% include "footer.html" %}
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+
+const duration = 3000;
+const animationEnd = Date.now() + duration;
+
+const interval = setInterval(function(){
+
+const timeLeft = animationEnd - Date.now();
+
+if(timeLeft <= 0){
+clearInterval(interval);
+return;
+}
+
+confetti({
+particleCount:50,
+spread:360,
+origin:{x:Math.random(),y:Math.random()-0.2}
+});
+
+},250);
+
+</script>
+
+</body>
+</html>

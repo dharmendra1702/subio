@@ -1,78 +1,144 @@
 from django.db import models
-import uuid
-from cloudinary.models import CloudinaryField
-
-from django.db import models
-
+from django.contrib.auth.models import User
 from django.utils.text import slugify
+from django.utils import timezone
+import uuid
+
+
+
+# ================= CATEGORY =================
 
 class Category(models.Model):
+
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, blank=True)
     image = models.ImageField(upload_to="categories/", blank=True, null=True)
 
+    created = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["name"]
+
     def save(self, *args, **kwargs):
+
         if not self.slug:
-            from django.utils.text import slugify
             self.slug = slugify(self.name)
+
         super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
-    
+
+
+# ================= PRODUCT =================
+
 class Product(models.Model):
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        related_name="products"
+    )
+
     name = models.CharField(max_length=200)
+
     description = models.TextField(blank=True)
+
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    stock = models.IntegerField()
+
     image = models.ImageField(upload_to="products/")
 
-    # NEW FIELDS
+    # PRODUCT DETAILS
+
     highlights = models.TextField(blank=True)
+
     brand = models.CharField(max_length=100, blank=True)
+
     shelf_life = models.CharField(max_length=100, blank=True)
+
     net_weight = models.CharField(max_length=100, blank=True)
+
     gst_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
 
     # SEO
+
     meta_title = models.CharField(max_length=200, blank=True)
+
     meta_description = models.TextField(blank=True)
 
     created = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ["-created"]
+        indexes = [
+            models.Index(fields=["category"]),
+            models.Index(fields=["price"]),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+# ================= PRODUCT GALLERY =================
+
 class ProductImage(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
+
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="images"
+    )
+
     image = models.ImageField(upload_to="products/gallery/")
 
+    def __str__(self):
+        return f"{self.product.name} image"
+
+
+# ================= NEWSLETTER =================
+
 class NewsletterSubscriber(models.Model):
+
     email = models.EmailField(unique=True)
+
     subscribed_at = models.DateTimeField(auto_now_add=True)
+
     token = models.UUIDField(default=uuid.uuid4, editable=False)
+
+    class Meta:
+        ordering = ["-subscribed_at"]
 
     def __str__(self):
         return self.email
 
 
-from django.db import models
-from django.contrib.auth.models import User
-
+# ================= USER PROFILE =================
 
 class UserProfile(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+
     profile_photo = models.ImageField(upload_to="profile/", blank=True, null=True)
+
     gender = models.CharField(max_length=10, blank=True)
+
     date_of_birth = models.DateField(blank=True, null=True)
+
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.user.username
 
 
+# ================= ADDRESS =================
+
 class Address(models.Model):
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="addresses"
+    )
 
     label = models.CharField(max_length=50)
 
@@ -82,13 +148,22 @@ class Address(models.Model):
 
     created = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.label
+    class Meta:
+        ordering = ["-created"]
 
+    def __str__(self):
+        return f"{self.label} - {self.user.username}"
+
+
+# ================= MOBILE NUMBER =================
 
 class MobileNumber(models.Model):
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="mobiles"
+    )
 
     mobile = models.CharField(max_length=10)
 
@@ -98,56 +173,91 @@ class MobileNumber(models.Model):
 
     created = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ("user", "mobile")
+
     def __str__(self):
         return self.mobile
 
-from django.db import models
+
+# ================= COUPON =================
 
 class Coupon(models.Model):
+
     code = models.CharField(max_length=20, unique=True)
+
     discount_amount = models.FloatField()
+
     is_active = models.BooleanField(default=True)
+
     valid_from = models.DateField()
+
     valid_to = models.DateField()
+
+    class Meta:
+        ordering = ["-valid_from"]
 
     def __str__(self):
         return self.code
-    
 
-from django.db import models
-from django.contrib.auth.models import User
-from .models import Product
 
+# ================= ORDER =================
 
 class Order(models.Model):
 
     STATUS_CHOICES = (
-        ("pending","Pending"),
-        ("processing","Processing"),
-        ("shipped","Shipped"),
-        ("delivered","Delivered"),
-        ("cancelled","Cancelled"),
+        ("pending", "Pending"),
+        ("processing", "Processing"),
+        ("shipped", "Shipped"),
+        ("delivered", "Delivered"),
+        ("cancelled", "Cancelled"),
     )
 
-    user = models.ForeignKey(User,on_delete=models.CASCADE)
+    order_id = models.CharField(max_length=20, unique=True, blank=True)
+
+    # ⭐ NEW
+    invoice_number = models.CharField(max_length=30, blank=True, null=True)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
 
     address = models.TextField()
 
-    payment_method = models.CharField(max_length=50)
+    payment_method = models.CharField(max_length=20)
+    payment_status = models.CharField(max_length=20, default="Pending")
 
-    total = models.DecimalField(max_digits=10,decimal_places=2)
+    # ⭐ NEW FINANCIAL FIELDS
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default="pending"
-    )
+    gst = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    shipping_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    coupon_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
 
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"Order #{self.id}"
+    razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True)
+    def save(self, *args, **kwargs):
 
+        # Order ID
+        if not self.order_id:
+            self.order_id = "SUBIO-" + uuid.uuid4().hex[:8].upper()
+
+        # Invoice number
+        if not self.invoice_number:
+            self.invoice_number = "INV-" + uuid.uuid4().hex[:10].upper()
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.order_id
+
+
+# ================= ORDER ITEMS =================
 
 class OrderItem(models.Model):
 
@@ -157,22 +267,20 @@ class OrderItem(models.Model):
         related_name="items"
     )
 
-    product = models.ForeignKey(Product,on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE
+    )
 
-    quantity = models.IntegerField()
-
-    price = models.DecimalField(max_digits=10,decimal_places=2)
-
-    def __str__(self):
-        return self.product.name
-    
-
-class OrderItem(models.Model):
-
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
-
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-
-    quantity = models.IntegerField()
+    quantity = models.PositiveIntegerField()
 
     price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["order"]),
+            models.Index(fields=["product"]),
+        ]
+
+    def __str__(self):
+        return f"{self.product.name} x {self.quantity}"

@@ -44,7 +44,11 @@ urlpatterns = [
     path("orders/", views.orders, name="orders"),
     path("place-order/", views.place_order, name="place_order"),
     path("apply-coupon/", views.apply_coupon, name="apply_coupon"),
-
+    path("edit-address/<int:id>/", views.edit_address, name="edit_address"),
+    path("delete-extra-address/<int:id>/", views.delete_extra_address),
+    path("add-extra-address/", views.add_extra_address),
+    path("order-success/<str:order_id>/", views.order_success, name="order_success"),
+    path("invoice/<str:order_id>/", views.download_invoice, name="download_invoice"),
     # ================= NEWSLETTER =================
     path("newsletter/", views.newsletter_subscribe, name="newsletter"),
     path("newsletter/unsubscribe/<uuid:token>/", views.newsletter_unsubscribe, name="newsletter_unsubscribe"),

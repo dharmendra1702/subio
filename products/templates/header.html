@@ -1,0 +1,104 @@
+{% load static %}
+<header class="navbar">
+
+  <!-- LEFT -->
+  <div class="nav-left">
+    <a href="{% url 'home' %}">
+  <img src="{% static 'images/icons/logo.png' %}" class="logo-img">
+</a>
+  </div>
+
+  <!-- CENTER -->
+  <nav class="nav-center">
+    <a href="{% url 'home' %}">About</a>
+    <a href="{% url 'products' %}">Products</a>
+    <a href="#contact">Contact</a>
+  </nav>
+
+  <!-- RIGHT -->
+<div class="nav-right">
+
+  <!-- ACCOUNT DROPDOWN -->
+  <div class="account-wrap">
+
+    <button class="account-btn" id="accountBtn">Account</button>
+
+    <div class="account-dropdown" id="accountDropdown">
+
+      {% if user.is_authenticated %}
+
+      <div class="account-user">
+      Hi, {{ user.username }} 👋 
+      </div>
+
+      {% if user.is_staff %}
+        <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+      {% else %}
+        <a href="{% url 'profile' %}">Profile</a>
+
+        <a href="{% url 'orders' %}">My Orders</a>
+      {% endif %}
+
+      <a href="#" id="logoutBtn">Logout</a>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+  <!-- mobile hamburger -->
+  <div class="hamburger" id="hamburger">
+  <span></span>
+  <span></span>
+  <span></span>
+</div>
+
+</div>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+
+  <a href="{% url 'home' %}">About</a>
+  <a href="{% url 'products' %}">Products</a>
+  <a href="#contact">Contact</a> 
+
+  <!-- MOBILE ACCOUNT -->
+
+  <div class="mobile-account">
+
+    <div id="mobileAccountBtn" class="mobile-account-btn">
+      Account ▾
+    </div>
+
+    <div id="mobileAccountDropdown" class="mobile-account-dropdown">
+
+      {% if user.is_authenticated %}
+
+        <div class="account-user">
+        Hi, {{ user.username }} 👋
+        </div>
+
+        {% if user.is_staff %}
+          <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+        {% else %}
+          <a href="{% url 'profile' %}">Profile</a>
+
+          <a href="{% url 'orders' %}">My Orders</a>
+        {% endif %}
+
+        <a href="#" id="logoutBtnMobile">Logout</a>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+</div>
+
+</header>

@@ -1,0 +1,333 @@
+{% load math_filters %}
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+
+<style>
+
+@page {
+    size: A4;
+    margin: 20px;
+}
+
+body{
+    font-family: DejaVu Sans, Helvetica, Arial;
+    font-size:12px;
+    color:#333;
+}
+
+.logo{
+    height:80px;
+    width:auto;
+}
+
+.header{
+    border-bottom:2px solid #e5e5e5;
+    padding-bottom:8px;
+    margin-bottom:12px;
+}
+
+.company{
+    text-align:right;
+    font-size:11px;
+}
+
+.title{
+    font-size:20px;
+    font-weight:bold;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    background:#f5f5f5;
+    padding:6px;
+    font-size:12px;
+    border-bottom:1px solid #ddd;
+    text-align:left;
+}
+
+td{
+    padding:6px;
+    font-size:12px;
+    border-bottom:1px solid #eee;
+}
+
+.right{
+    text-align:right;
+}
+
+.center{
+    text-align:center;
+}
+
+.info-table td{
+    border:none;
+    padding:3px;
+}
+
+.address-table td{
+    border:none;
+    padding:3px;
+    vertical-align:top;
+}
+
+.total-table{
+    width:300px;
+    margin-top:10px;
+    float:right;
+}
+
+.total-table td{
+    border:none;
+    padding:4px;
+}
+
+.grand{
+    font-weight:bold;
+    font-size:13px;
+    border-top:2px solid #000;
+}
+
+.footer{
+    margin-top:30px;
+}
+
+.signature{
+    height:50px;
+    width:auto;
+    
+}
+
+.qr{
+    height:80px;
+}
+
+.note{
+    margin-top:20px;
+    font-size:10px;
+    text-align:center;
+    color:#777;
+}
+
+.amount-words{
+    margin-top:20px;
+    font-size:12px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- HEADER -->
+
+<table class="header">
+<tr>
+
+<td width="50%">
+<img src="data:image/png;base64,{{logo_base64}}" class="logo">
+</td>
+
+<td class="company">
+
+<div class="title">TAX INVOICE</div>
+
+<b>Subio Foods Pvt Ltd</b><br>
+Kattigenahalli, Bangalore<br>
+Phone: +91 96068 23003<br>
+Email: subiofoods@gmail.com
+
+</td>
+
+</tr>
+</table>
+
+
+<!-- ORDER INFO -->
+
+<table class="info-table">
+
+<tr>
+
+<td width="50%">
+<b>Invoice No:</b> {{order.invoice_number}}<br>
+<b>Order ID:</b> {{order.order_id}}<br>
+<b>Date:</b> {{order.created_at|date:"d M Y"}}
+</td>
+
+<td class="right">
+
+<b>Payment Method:</b> {{order.payment_method|upper}}<br>
+
+<b>Status:</b> {{order.payment_status}}<br>
+
+{% if order.payment_method == "UPI" %}
+<b>Razorpay Transaction ID:</b>
+{{ order.razorpay_payment_id|default:"N/A" }}<br>
+{% endif %}
+
+</td>
+
+</tr>
+
+</table>
+
+<br>
+
+
+<!-- ADDRESSES -->
+
+<table class="address-table">
+
+<tr>
+
+<td width="50%">
+
+<b>Billing Address</b><br>
+{{order.user.username}}<br>
+{{order.address}}
+
+</td>
+
+<td width="50%" class="right">
+
+<b>Shipping Address</b><br>
+{{order.user.username}}<br>
+{{order.address}}
+
+</td>
+
+</tr>
+
+</table>
+
+<br>
+
+
+<!-- PRODUCTS -->
+
+<table>
+
+<tr>
+<th width="5%">#</th>
+<th width="45%">Product</th>
+<th width="15%" class="center">Qty</th>
+<th width="15%" class="right">Price</th>
+<th width="20%" class="right">Total</th>
+</tr>
+
+{% for item in items %}
+
+<tr>
+
+<td>{{forloop.counter}}</td>
+
+<td>{{item.product.name}}</td>
+
+<td class="center">{{item.quantity}}</td>
+
+<td class="right">Rs {{item.price|floatformat:2}}</td>
+
+<td class="right">Rs {{item.quantity|multiply:item.price|floatformat:2}}</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+
+<!-- TOTALS -->
+
+<table class="total-table">
+
+<tr>
+<td>Subtotal</td>
+<td class="right">Rs {{subtotal|floatformat:2}}</td>
+</tr>
+
+<tr>
+<td>GST (5%)</td>
+<td class="right">Rs {{gst|floatformat:2}}</td>
+</tr>
+
+<tr>
+<td>Delivery Fee</td>
+
+<td class="right">
+
+{% if shipping == 0 %}
+FREE
+{% else %}
+Rs {{shipping|floatformat:2}}
+{% endif %}
+
+</td>
+</tr>
+
+<tr>
+<td>Coupon Discount</td>
+<td class="right">- Rs {{coupon|floatformat:2}}</td>
+</tr>
+
+<tr class="grand">
+<td>Total</td>
+<td class="right">Rs {{total|floatformat:2}}</td>
+</tr>
+
+</table>
+
+<div style="clear:both"></div>
+
+
+<div class="amount-words">
+
+<b>Amount in words:</b><br>
+{{amount_words}}
+
+</div>
+
+
+<!-- FOOTER -->
+
+<table class="footer">
+
+<tr>
+
+<td width="50%">
+
+<img src="data:image/png;base64,{{qr_code}}" class="qr"><br>
+Scan to verify order
+
+</td>
+
+<td style="text-align:right">
+
+<img src="data:image/png;base64,{{signature_base64}}" class="signature"><br>
+
+Authorized Signatory<br>
+Subio Foods Pvt Ltd
+
+</td>
+
+</tr>
+
+</table>
+
+
+<div class="note">
+
+This is a computer generated invoice.<br>
+Thank you for shopping with Subio Foods!
+
+</div>
+
+</body>
+</html>

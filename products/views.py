@@ -1,11 +1,15 @@
+import uuid
+
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
-from urllib3 import request
 import razorpay
 from django.conf import settings
+from .models import Category
+from decimal import ROUND_HALF_UP, Decimal
+import os
 
 def home(request):
     categories = Category.objects.all()
@@ -78,6 +82,18 @@ from django.conf import settings
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from .models import Category, NewsletterSubscriber, ProductImage
+
+@login_required
+def order_success(request, order_id):
+
+    order = Order.objects.prefetch_related(
+        "items__product"
+    ).get(order_id=order_id, user=request.user)
+
+    return render(request, "order_success.html", {
+        "order": order,
+        "items": order.items.all()
+    })
 
 @require_POST
 def newsletter_subscribe(request):
@@ -172,7 +188,7 @@ def categories_admin(request):
         if name:
             Category.objects.create(name=name)
 
-    categories = Category.objects.prefetch_related("product_set")
+    categories = Category.objects.prefetch_related("products")
 
     return render(request,"admin/categories_admin.html",{
         "categories":categories
@@ -254,7 +270,6 @@ def add_product(request):
             name=request.POST["name"],
             description=request.POST.get("description",""),
             price=request.POST["price"],
-            stock=request.POST["stock"],
             image=image,
 
             highlights=request.POST.get("highlights",""),
@@ -289,7 +304,6 @@ def edit_product(request,id):
         product.name = request.POST["name"]
         product.description = request.POST.get("description","")
         product.price = request.POST["price"]
-        product.stock = request.POST["stock"]
 
         # EXTRA FIELDS
         product.highlights = request.POST.get("highlights","")
@@ -318,15 +332,6 @@ def edit_product(request,id):
 def delete_product(request,id):
     Product.objects.filter(id=id).delete()
     return redirect("products_admin")
-
-def inline_add_product(request,cat_id):
-    Product.objects.create(
-        category_id=cat_id,
-        name=request.POST["name"],
-        price=request.POST["price"],
-        image=request.FILES["image"]
-    )
-    return redirect("categories_admin")
 
 
 # <=================== USER PRODUCTS ==================>
@@ -411,14 +416,20 @@ def cart_view(request):
 
     cart = request.session.get("cart", {})
 
-    total = sum(item["price"] * item["quantity"] for item in cart.values())
+    total = 0
+
+    for item in cart.values():
+
+        price = Decimal(str(item["price"]))
+        quantity = int(item["quantity"])
+
+        item["subtotal"] = price * quantity
+
+        total += item["subtotal"]
 
     coupon_discount = request.session.get("coupon_discount", 0)
 
-    products = list(Product.objects.all())
-    random.shuffle(products)
-
-    recommended = products[:4]
+    recommended = Product.objects.order_by("?")[:4]
 
     return render(request, "cart.html", {
         "cart": cart,
@@ -608,6 +619,23 @@ def make_default_address(request, id):
     return JsonResponse({"success": True})
 
 
+@login_required
+@require_POST
+def edit_address(request, id):
+
+    try:
+        addr = Address.objects.get(id=id, user=request.user)
+
+        addr.label = request.POST.get("label")
+        addr.address = request.POST.get("address")
+
+        addr.save()
+
+        return JsonResponse({"success": True})
+
+    except Address.DoesNotExist:
+        return JsonResponse({"success": False})
+
 # ================= ADD MOBILE =================
 
 import re
@@ -725,8 +753,10 @@ def orders(request):
 
 
 def get_cart_count(request):
-    cart = request.session.get("cart", {})
-    return sum(item["quantity"] for item in cart.values())
+    cart = request.session.get("cart")
+    if not cart:
+        return 0
+    return sum(i["quantity"] for i in cart.values())
 
 @login_required
 def complete_profile(request):
@@ -773,30 +803,48 @@ def complete_profile(request):
 
     return render(request, "complete_profile.html")
 
-from .models import Address, MobileNumber
+from .models import Address, MobileNumber, Product
+import random
+
 @login_required
 def checkout(request):
 
     cart = request.session.get("cart", {})
 
-    subtotal = sum(item["price"] * item["quantity"] for item in cart.values())
+    if not cart:
+        return redirect("cart")
 
-    gst = subtotal * 0.05
-    shipping = 40 if subtotal < 399 else 0
-    coupon_discount = request.session.get("coupon_discount", 0)
+    subtotal = sum(
+    Decimal(str(item["price"])) * item["quantity"]
+    for item in cart.values()
+)
+
+    gst = subtotal * Decimal("0.05")
+    shipping = Decimal("40.00") if subtotal < Decimal("399") else Decimal("0.00")
+    coupon_discount = Decimal(str(request.session.get("coupon_discount", 0)))
 
     final_total = subtotal + gst + shipping - coupon_discount
+
+    # ✅ force 2 decimal places
+    subtotal = subtotal.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    gst = gst.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    shipping = shipping.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    coupon_discount = coupon_discount.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    final_total = final_total.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
 
     # Razorpay order
     client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
     payment = client.order.create({
-        "amount": int(final_total * 100),  # Razorpay takes paise
+        "amount": int(final_total * 100),
         "currency": "INR",
         "payment_capture": 1
     })
 
     addresses = Address.objects.filter(user=request.user)
+
+    # ⭐ Recommended products
+    recommended_products = Product.objects.all()[:4]
 
     return render(request,"checkout.html",{
         "cart":cart,
@@ -806,84 +854,123 @@ def checkout(request):
         "coupon_discount":coupon_discount,
         "final_total":final_total,
         "addresses":addresses,
+        "recommended_products":recommended_products,   # ⭐ added
         "razorpay_order_id": payment["id"],
         "razorpay_key": settings.RAZORPAY_KEY_ID
     })
 
-from django.shortcuts import render, redirect
+
+from django.db import transaction
 from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
 from django.contrib import messages
-from .models import Order, OrderItem, Product
+from .models import Order, OrderItem, Product, Address
 
 @login_required
+@transaction.atomic
 def place_order(request):
 
-    if request.method == "POST":
+    if request.method != "POST":
+        return redirect("cart")
 
-        payment = request.POST.get("payment")
-        address_id = request.POST.get("address_id")
+    cart = request.session.get("cart", {})
 
-        if address_id:
-            addr = Address.objects.get(id=address_id, user=request.user)
+    if not cart:
+        messages.error(request, "Cart empty")
+        return redirect("cart")
 
-        else:
-            street = request.POST.get("address")
-            city = request.POST.get("city")
-            pincode = request.POST.get("pincode")
-            state = request.POST.get("state")
+    address_id = request.POST.get("address_id")
 
-            full_address = f"{street}, {city}, {state} - {pincode}"
+    # ADDRESS
+    if address_id:
+        addr = Address.objects.get(id=address_id, user=request.user)
+    else:
+        street = request.POST.get("address")
+        city = request.POST.get("city")
+        pincode = request.POST.get("pincode")
+        state = request.POST.get("state")
 
-            addr = Address.objects.create(
-                user=request.user,
-                label="New Address",
-                address=full_address
-            )
+        full_address = f"{street}, {city}, {state} - {pincode}"
 
-        address = addr.address
-
-        cart = request.session.get("cart", {})
-
-        if not cart:
-            messages.error(request, "Cart empty")
-            return redirect("cart")
-
-        subtotal = sum(item["price"] * item["quantity"] for item in cart.values())
-
-        gst = subtotal * 0.05
-        shipping = 40 if subtotal < 399 else 0
-        coupon_discount = request.session.get("coupon_discount", 0)
-
-        final_total = subtotal + gst + shipping - coupon_discount
-
-        # CREATE ORDER
-        order = Order.objects.create(
+        addr = Address.objects.create(
             user=request.user,
-            address=address,
-            payment_method=payment,
-            total=final_total
+            label="New Address",
+            address=full_address
         )
 
-        # SAVE ORDER ITEMS
-        for key, item in cart.items():
+    address = addr.address
 
-            product = Product.objects.get(id=key)
+    # TOTAL CALCULATION
+    subtotal = sum(
+        Decimal(str(item["price"])) * item["quantity"]
+        for item in cart.values()
+    )
 
-            OrderItem.objects.create(
+    gst = subtotal * Decimal("0.05")
+    shipping = Decimal("40.00") if subtotal < Decimal("399") else Decimal("0.00")
+    coupon_discount = Decimal(str(request.session.get("coupon_discount", 0)))
+
+    final_total = subtotal + gst + shipping - coupon_discount
+
+    subtotal = subtotal.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    gst = gst.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    shipping = shipping.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    coupon_discount = coupon_discount.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    final_total = final_total.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+
+    # PAYMENT DETECTION
+    razorpay_payment_id = request.POST.get("razorpay_payment_id", "").strip()
+
+    if razorpay_payment_id != "":
+        payment_method = "UPI"
+        payment_status = "Paid"
+    else:
+        payment_method = "COD"
+        payment_status = "Pending"
+        razorpay_payment_id = None
+
+    # CREATE ORDER (ONLY ONCE)
+    order = Order.objects.create(
+        user=request.user,
+        address=address,
+        payment_method=payment_method,
+        payment_status=payment_status,
+        razorpay_payment_id=razorpay_payment_id,
+        subtotal=subtotal,
+        gst=gst,
+        shipping_fee=shipping,
+        coupon_discount=coupon_discount,
+        total=final_total,
+    )
+
+    # ORDER ITEMS
+    product_ids = cart.keys()
+    products = Product.objects.filter(id__in=product_ids).in_bulk()
+
+    order_items = []
+
+    for pid, item in cart.items():
+        product = products.get(int(pid))
+        if not product:
+            continue
+
+        order_items.append(
+            OrderItem(
                 order=order,
                 product=product,
                 quantity=item["quantity"],
                 price=item["price"]
             )
+        )
 
-        # CLEAR CART + COUPON
-        request.session["cart"] = {}
-        request.session.pop("coupon_discount", None)
-        request.session.modified = True
+    OrderItem.objects.bulk_create(order_items)
 
-        return redirect("orders")
+    # CLEAR CART
+    request.session["cart"] = {}
+    request.session["coupon_discount"] = 0
+    request.session.modified = True
 
-    return redirect("cart")
+    return redirect("order_success", order_id=order.order_id)
 
 from django.http import JsonResponse
 from django.utils import timezone
@@ -901,6 +988,11 @@ def apply_coupon(request):
         today = timezone.now().date()
 
         if coupon.valid_from <= today <= coupon.valid_to:
+            if "coupon_discount" in request.session:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Coupon already applied"
+                })
 
             request.session["coupon_discount"] = coupon.discount_amount
 
@@ -922,3 +1014,111 @@ def apply_coupon(request):
             "message": "Invalid coupon"
         })
 
+
+from django.conf import settings
+import os
+
+def link_callback(uri, rel):
+
+    if uri.startswith(settings.MEDIA_URL):
+        path = os.path.join(settings.MEDIA_ROOT, uri.replace(settings.MEDIA_URL, ""))
+
+    elif uri.startswith(settings.STATIC_URL):
+        path = os.path.join(settings.STATIC_ROOT, uri.replace(settings.STATIC_URL, ""))
+
+    else:
+        path = os.path.join(settings.BASE_DIR, uri)
+
+    return path
+
+def image_to_base64(path):
+    with open(path, "rb") as img:
+        return base64.b64encode(img.read()).decode()
+
+import qrcode
+import base64
+from io import BytesIO
+from decimal import Decimal
+from num2words import num2words
+from django.template.loader import get_template
+from django.http import HttpResponse
+from django.conf import settings
+from xhtml2pdf import pisa
+from django.contrib.auth.decorators import login_required
+from .models import Order
+import os
+
+
+def image_to_base64(path):
+    with open(path, "rb") as img:
+        return base64.b64encode(img.read()).decode()
+
+
+@login_required
+def download_invoice(request, order_id):
+
+    order = Order.objects.prefetch_related("items__product").get(
+        order_id=order_id,
+        user=request.user
+    )
+
+    items = order.items.all()
+
+    subtotal = sum((i.price * i.quantity for i in items), Decimal("0"))
+    gst = subtotal * Decimal("0.05")
+    shipping = order.shipping_fee or Decimal("0")
+    coupon = order.coupon_discount or Decimal("0")
+
+    total = subtotal + gst + shipping - coupon
+
+
+    subtotal = subtotal.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    gst = gst.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    shipping = shipping.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    coupon = coupon.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    total = total.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+
+    amount_words = num2words(total, lang="en_IN").title() + " Rupees Only"
+
+    # -------- QR CODE --------
+
+    qr = qrcode.make(f"https://subiofoods.com/order/{order.order_id}")
+
+    buffer = BytesIO()
+    qr.save(buffer, format="PNG")
+
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+    # -------- LOGO + SIGNATURE --------
+
+    logo_file = os.path.join(settings.BASE_DIR, "products/static/images/icons/logo.png")
+    signature_file = os.path.join(settings.BASE_DIR, "products/static/images/signature.png")
+
+    logo_base64 = image_to_base64(logo_file)
+    signature_base64 = image_to_base64(signature_file)
+
+    # -------- RENDER TEMPLATE --------
+
+    template = get_template("invoice.html")
+
+    html = template.render({
+        "order": order,
+        "items": items,
+        "subtotal": subtotal,
+        "gst": gst,
+        "shipping": shipping,
+        "coupon": coupon,
+        "total": total,
+        "amount_words": amount_words,
+        "qr_code": qr_base64,
+        "logo_base64": logo_base64,
+        "signature_base64": signature_base64
+    })
+
+    response = HttpResponse(content_type="application/pdf")
+
+    response["Content-Disposition"] = f'attachment; filename="SUBIO_{order.invoice_number}.pdf"'
+
+    pisa.CreatePDF(html, dest=response)
+
+    return response

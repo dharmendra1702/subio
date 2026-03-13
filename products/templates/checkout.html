@@ -4,209 +4,429 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
 <title>Checkout | Subio Foods</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
+<link rel="stylesheet" href="{% static 'css/header_footer.css' %}">
+<link rel="stylesheet" href="{% static 'css/cart_drawer.css' %}">
+
 <style>
+
+/* ================= GLOBAL ================= */
 
 *{
 margin:0;
 padding:0;
 box-sizing:border-box;
-font-family:'Poppins',sans-serif;
+font-family:'Inter',sans-serif;
 }
 
 body{
-background:#f4f6f8;
-padding:40px 6%;
+background:#f6f7fb;
+color:#111827;
+padding-top:90px;
 }
 
-/* ===== PROGRESS BAR ===== */
+/* ================= PAGE CONTAINER ================= */
 
-.steps{
+.checkout-container{
+max-width:1300px;
+margin:auto;
+padding:30px 6%;
+}
+
+/* ================= PROGRESS ================= */
+
+.progress{
+display:flex;
+gap:10px;
+margin-bottom:30px;
+}
+
+.bar{
+flex:1;
+height:6px;
+background:#e5e7eb;
+border-radius:20px;
+}
+
+.bar.active{
+background:#16a34a;
+}
+
+/* ================= GRID ================= */
+
+.grid{
+display:grid;
+grid-template-columns:2fr 1fr;
+gap:40px;
+align-items:start;
+}
+
+@media(max-width:900px){
+.grid{
+grid-template-columns:1fr;
+}
+}
+
+/* ================= SECTION ================= */
+
+.section{
+background:white;
+border-radius:14px;
+box-shadow:0 8px 24px rgba(0,0,0,.05);
+margin-bottom:18px;
+overflow:hidden;
+}
+
+.section-header{
+padding:18px 22px;
+font-weight:600;
+background:#fafafa;
+}
+
+.section-body{
+padding:22px;
+display:none;
+}
+
+.section.active .section-body{
+display:block;
+animation:fade .25s ease;
+}
+
+@keyframes fade{
+from{opacity:0;transform:translateY(10px)}
+to{opacity:1;transform:translateY(0)}
+}
+
+/* ================= ADDRESS ================= */
+
+.address{
+border:1px solid #e5e7eb;
+padding:16px;
+border-radius:10px;
+margin-bottom:12px;
+cursor:pointer;
+position:relative;
+}
+
+.address.selected{
+border:2px solid #16a34a;
+background:#f0fdf4;
+}
+
+.address-actions{
+position:absolute;
+right:12px;
+top:10px;
+font-size:13px;
+display:flex;
+gap:12px;
+color:#6b7280;
+cursor:pointer;
+}
+
+/* ================= PAYMENT ================= */
+
+.payment{
+border:1px solid #e5e7eb;
+padding:14px;
+border-radius:10px;
+margin-bottom:10px;
 display:flex;
 justify-content:space-between;
-position:relative;
-margin-bottom:50px;
+align-items:center;
+cursor:pointer;
 }
 
-.steps::before{
-content:"";
-position:absolute;
-top:20px;
-left:8%;
-width:84%;
-height:3px;
-background:#ddd;
+.payment:hover{
+border-color:#16a34a;
 }
 
-.step{
+.payment-icons img{
+height:18px;
+margin-left:6px;
+}
+
+/* ================= BUTTONS ================= */
+
+.btn{
+width:100%;
+padding:14px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+margin-top:16px;
+font-size:15px;
+}
+
+.btn-primary{
+background:#16a34a;
+color:white;
+}
+
+.btn-secondary{
+background:#f3f4f6;
+}
+
+/* ================= SUMMARY ================= */
+
+.summary{
+background:white;
+border-radius:14px;
+padding:24px;
+box-shadow:0 8px 24px rgba(0,0,0,.05);
+position:sticky;
+top:100px;
+
+width:100%;
+max-height:520px;
+
+display:flex;
+flex-direction:column;
+}
+
+/* PRODUCT LIST */
+
+.summary-products{
+max-height:260px;
+overflow-y:auto;
+margin-bottom:15px;
+}
+
+/* SCROLLBAR */
+
+.summary-products::-webkit-scrollbar{
+width:5px;
+}
+
+.summary-products::-webkit-scrollbar-thumb{
+background:#d1d5db;
+border-radius:10px;
+}
+
+/* PRODUCT ROW */
+
+.product{
+display:flex;
+align-items:center;
+gap:10px;
+margin-bottom:14px;
+}
+
+.product img{
+width:46px;
+height:46px;
+border-radius:8px;
+object-fit:cover;
+}
+
+/* PRICE ROW */
+
+.row{
+display:flex;
+justify-content:space-between;
+margin-bottom:8px;
+font-size:15px;
+}
+
+/* TOTAL */
+
+.total{
+font-weight:600;
+font-size:18px;
+border-top:1px solid #eee;
+padding-top:12px;
+margin-top:10px;
+}
+
+/* ================= COUPON ================= */
+
+.coupon-box{
+display:flex;
+gap:10px;
+margin-top:14px;
+}
+
+.coupon-input{
 flex:1;
-text-align:center;
-position:relative;
+height:44px;
+padding:0 16px;
+border:1px solid #e5e7eb;
+border-radius:10px;
+background:#f9fafb;
+font-size:14px;
+transition:.2s;
 }
 
-.step span{
-width:40px;
-height:40px;
-display:inline-flex;
+.coupon-input:focus{
+outline:none;
+border-color:#16a34a;
+background:white;
+box-shadow:0 0 0 3px rgba(22,163,74,.12);
+}
+
+.coupon-btn{
+height:44px;
+padding:0 20px;
+border:none;
+border-radius:10px;
+background:#16a34a;
+color:white;
+font-weight:500;
+cursor:pointer;
+transition:.2s;
+}
+
+.coupon-btn:hover{
+background:#15803d;
+}
+
+/* ================= SUCCESS MESSAGE ================= */
+
+.coupon-success{
+
+display:none;
+
+margin-top:14px;
+
+background:#ecfdf5;
+border:1px solid #bbf7d0;
+
+padding:12px;
+border-radius:10px;
+
+align-items:center;
+gap:12px;
+
+animation:couponPop .4s ease;
+
+}
+
+.coupon-check{
+
+width:28px;
+height:28px;
+border-radius:50%;
+
+background:#16a34a;
+color:white;
+
+display:flex;
 align-items:center;
 justify-content:center;
-border-radius:50%;
-background:#ddd;
-transition:.3s;
+
+font-size:14px;
+
 }
 
-.step.active span{
-background:#2e7d32;
-color:white;
+.coupon-text{
+font-weight:600;
+font-size:14px;
 }
 
-.step.completed span{
-background:#22c55e;
-color:white;
+.coupon-save{
+font-size:13px;
+color:#16a34a;
 }
 
-/* ===== LAYOUT ===== */
+/* animation */
 
-.checkout-wrapper{
+@keyframes couponPop{
+
+from{
+opacity:0;
+transform:translateY(8px);
+}
+
+to{
+opacity:1;
+transform:translateY(0);
+}
+
+}
+
+/* ================= SHIPPING ================= */
+
+.shipping{
+
+margin-top:18px;
+
+padding:10px 14px;
+
+background:#f0fdf4;
+border:1px solid #bbf7d0;
+
+border-radius:8px;
+
+font-size:14px;
+color:#065f46;
+
+}
+
+/* ================= SECURITY ================= */
+
+.security{
+
+margin-top:18px;
+
+border-top:1px solid #eee;
+padding-top:15px;
+
+}
+
+.secure-row{
+
 display:flex;
-gap:40px;
-flex-wrap:wrap;
+align-items:center;
+gap:8px;
+
+font-size:14px;
+margin-bottom:10px;
+
 }
 
-.checkout-form{
-flex:2;
+.secure-row img{
+width:18px;
+}
+
+.cards img{
+height:22px;
+margin-right:6px;
+}
+
+/* ================= MODAL ================= */
+
+.modal{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.4);
+display:none;
+justify-content:center;
+align-items:center;
+z-index:9999;
+}
+
+.modal-box{
 background:white;
 padding:30px;
 border-radius:12px;
+width:420px;
 }
 
-.order-summary{
-flex:1;
-background:white;
-padding:25px;
-border-radius:12px;
-}
-
-/* ADDRESS */
-
-.address-card{
-border:1px solid #ddd;
-padding:12px;
-border-radius:8px;
-margin-bottom:10px;
-display:flex;
-gap:10px;
-cursor:pointer;
-}
-
-.address-card:hover{
-border-color:#2e7d32;
-}
-
-.address-card input:checked + div{
-border-left:4px solid #2e7d32;
-padding-left:8px;
-}
-
-/* BUTTON */
-
-.btn{
-margin-top:20px;
-padding:14px;
-background:#2e7d32;
-border:none;
-color:white;
+.modal-box input,
+.modal-box textarea{
 width:100%;
-border-radius:8px;
-cursor:pointer;
-}
-
-/* SUMMARY */
-
-.summary-item{
-display:flex;
-justify-content:space-between;
-margin-bottom:12px;
-align-items:center;
-}
-
-.summary-item img{
-width:45px;
-height:45px;
-border-radius:6px;
-object-fit:cover;
-margin-right:10px;
-}
-
-.product-row{
-display:flex;
-align-items:center;
-gap:10px;
-}
-
-.total{
-font-size:18px;
-font-weight:600;
-border-top:1px solid #eee;
-padding-top:10px;
-}
-
-/* ===== ADD ADDRESS ===== */
-
-#newAddressForm{
-margin-top:25px;
-padding:25px;
-background:white;
-border-radius:12px;
-border:1px solid #eee;
-box-shadow:0 8px 24px rgba(0,0,0,0.06);
-}
-
-.address-grid{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:15px;
-}
-
-.address-grid input{
-padding:12px;
+padding:10px;
+margin-top:10px;
 border:1px solid #ddd;
 border-radius:6px;
-}
-
-.address-grid .full{
-grid-column:span 2;
-}
-
-.add-address-btn{
-margin-top:20px;
-width:100%;
-padding:14px;
-background:#444;
-border:none;
-border-radius:8px;
-color:white;
-cursor:pointer;
-}
-
-.add-address-btn:hover{
-background:#2e7d32;
-}
-
-/* SUCCESS */
-
-.success-box{
-background:#f9fafb;
-padding:20px;
-border-radius:10px;
-margin-top:20px;
 }
 
 </style>
@@ -214,284 +434,717 @@ margin-top:20px;
 
 <body>
 
-<h1>Checkout</h1>
+<!-- NAVBAR -->
+<header class="navbar">
 
-<div class="steps">
+  <!-- LEFT -->
+  <div class="nav-left">
+    <a href="{% url 'home' %}">
+  <img src="{% static 'images/icons/logo.png' %}" class="logo-img">
+</a>
+  </div>
 
-<div class="step active">
-<span>1</span>
-<p>Address</p>
+  <!-- CENTER -->
+  <nav class="nav-center">
+    <a href="{% url 'home' %}">About</a>
+    <a href="{% url 'products' %}">Products</a>
+    <a href="#contact">Contact</a>
+  </nav>
+
+  <!-- RIGHT -->
+<div class="nav-right">
+
+  <!-- ACCOUNT DROPDOWN -->
+  <div class="account-wrap">
+
+    <button class="account-btn" id="accountBtn">Account</button>
+
+    <div class="account-dropdown" id="accountDropdown">
+
+      {% if user.is_authenticated %}
+
+      <div class="account-user">
+      Hi, {{ user.username }} 👋 
+      </div>
+
+      {% if user.is_staff %}
+        <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+      {% else %}
+        <a href="{% url 'profile' %}">Profile</a>
+
+        <a href="{% url 'orders' %}">My Orders</a>
+      {% endif %}
+
+      <a href="#" id="logoutBtn">Logout</a>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+    </div>
+
+  </div>
+
+  <!-- mobile hamburger -->
+  <div class="hamburger" id="hamburger">
+  <span></span>
+  <span></span>
+  <span></span>
 </div>
 
-<div class="step">
-<span>2</span>
-<p>Payment</p>
 </div>
 
-<div class="step">
-<span>3</span>
-<p>Complete</p>
-</div>
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+
+  <a href="{% url 'home' %}">About</a>
+  <a href="{% url 'products' %}">Products</a>
+  <a href="#contact">Contact</a> 
+
+  <!-- MOBILE ACCOUNT -->
+
+  <div class="mobile-account">
+
+    <div id="mobileAccountBtn" class="mobile-account-btn">
+      Account ▾
+    </div>
+
+    <div id="mobileAccountDropdown" class="mobile-account-dropdown">
+
+      {% if user.is_authenticated %}
+
+        <div class="account-user">
+        Hi, {{ user.username }} 👋
+        </div>
+
+        {% if user.is_staff %}
+          <a href="{% url 'admin_dashboard' %}">Dashboard</a>
+        {% else %}
+          <a href="{% url 'profile' %}">Profile</a>
+
+          <a href="{% url 'orders' %}">My Orders</a>
+        {% endif %}
+
+        <a href="#" id="logoutBtnMobile">Logout</a>
+
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+
+    </div>
+
+  </div>
 
 </div>
 
-<div class="checkout-wrapper">
+</header>
 
-<div class="checkout-form">
+<div class="checkout-container">
 
-<form method="POST" action="{% url 'place_order' %}">
+<!-- PROGRESS -->
+<div class="progress">
+<div class="bar active"></div>
+<div class="bar"></div>
+<div class="bar"></div>
+</div>
+
+<div class="grid">
+
+<!-- LEFT SIDE -->
+
+<div>
+
+<form method="POST" action="{% url 'place_order' %}" id="orderForm">
 {% csrf_token %}
 
-<!-- STEP 1 -->
+<!-- ADDRESS -->
 
-<div id="step1">
+<div class="section active" id="section1">
 
-<h3>Select Address</h3>
+<div class="section-header">1. Delivery Address</div>
+
+<div class="section-body">
 
 {% for addr in addresses %}
 
-<label class="address-card">
+<div class="address">
 
-<input type="radio" name="address_id"
-value="{{addr.id}}"
+<input type="radio" name="address_id" value="{{addr.id}}" hidden
 {% if addr.is_default %}checked{% endif %}>
 
-<div>
 <strong>{{addr.label}}</strong>
 <p>{{addr.address}}</p>
+
+<div class="address-actions">
+
+<span onclick="editAddress('{{addr.id}}','{{addr.label}}','{{addr.address}}')">
+Edit
+</span>
+
+<span onclick="deleteAddress('{{addr.id}}')">
+Delete
+</span>
+
 </div>
 
-</label>
+</div>
 
 {% endfor %}
 
-<button type="button" class="add-address-btn" onclick="toggleAddressForm()">
+<button type="button" class="btn btn-secondary" onclick="openModal()">
 + Add New Address
 </button>
 
-<div id="newAddressForm" style="display:none">
-
-<div class="address-grid">
-
-<input type="text" name="name" placeholder="Full Name">
-<input type="text" name="phone" placeholder="Mobile Number">
-
-<input type="text" name="label" placeholder="Address Label">
-
-<input type="text" name="address" class="full" placeholder="Street Address">
-
-<input type="text" name="city" placeholder="City">
-<input type="text" name="pincode" placeholder="Pincode">
-
-<input type="text" name="state" class="full" placeholder="State">
+<button type="button" class="btn btn-primary" onclick="openSection(2)">
+Continue
+</button>
 
 </div>
-
 </div>
 
-<button type="button" class="btn" onclick="goToPayment()">Next</button>
+<!-- PAYMENT -->
 
-</div>
+<div class="section" id="section2">
 
-<!-- STEP 2 -->
+<div class="section-header">2. Payment Method</div>
 
-<div id="step2" style="display:none">
+<div class="section-body">
 
-<h3>Select Payment</h3>
+<label class="payment">
 
-<label class="address-card">
+<div>
 <input type="radio" name="payment" value="cod" checked>
 Cash on Delivery
+</div>
+
 </label>
 
-<label class="address-card">
+<label class="payment">
+
+<div>
 <input type="radio" name="payment" value="razorpay">
-UPI / GPay / Card
+Online Payment
+</div>
+
+<div class="payment-icons">
+
+<img src="https://img.icons8.com/color/48/visa.png">
+<img src="https://img.icons8.com/color/48/google-pay.png">
+<img src="{% static 'images/upi.svg' %}" width="40" alt="UPI">
+
+</div>
+
 </label>
 
-<button type="button" class="btn" onclick="payNow()">Proceed</button>
+<button type="button" class="btn btn-primary" onclick="openSection(3)">
+Continue
+</button>
 
-<button type="button" class="btn" style="background:#777" onclick="backToAddress()">Back</button>
-
-</div>
-
-<!-- STEP 3 -->
-
-<div id="step3" style="display:none;text-align:center">
-
-<h2 style="color:#22c55e">Order Successful 🎉</h2>
-
-<div class="success-box">
-
-<p><strong>Total Paid:</strong> ₹{{final_total}}</p>
-
-<p><strong>Payment Method:</strong> <span id="paymentMethodText"></span></p>
-
-<p><strong>Delivery Address:</strong></p>
-
-<p id="selectedAddressText"></p>
+<button type="button" class="btn btn-secondary" onclick="openSection(1)">
+Back
+</button>
 
 </div>
-
-<a href="/" class="btn">Continue Shopping</a>
-
 </div>
 
+<!-- REVIEW -->
+
+<div class="section" id="section3">
+
+<div class="section-header">3. Review & Place Order</div>
+
+<div class="section-body">
+
+<button type="button" class="btn btn-primary" onclick="payNow()">
+Place Order
+</button>
+
+<button type="button" class="btn btn-secondary" onclick="openSection(2)">
+Back
+</button>
+
+</div>
+</div>
+<input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
 </form>
 
 </div>
 
-<!-- ORDER SUMMARY -->
+<!-- RIGHT SIDE SUMMARY -->
 
-<div class="order-summary">
+<div class="summary">
 
 <h3>Order Summary</h3>
 
+<div class="summary-products">
+
 {% for key,item in cart.items %}
 
-<div class="summary-item">
-
-<div class="product-row">
+<div class="product">
 
 <img src="{{item.image}}">
 <span>{{item.name}} × {{item.quantity}}</span>
 
-</div>
-
-<span>₹{{item.price}}</span>
+<span style="margin-left:auto">₹{{item.price}}</span>
 
 </div>
 
 {% endfor %}
 
-<hr>
+</div>
 
-<div class="summary-item">
+<div class="row">
 <span>Subtotal</span>
-<span>₹{{subtotal}}</span>
+<span>₹{{ subtotal|floatformat:2 }}</span>
 </div>
 
-<div class="summary-item">
+<div class="row">
 <span>GST</span>
-<span>₹{{gst}}</span>
+<span>₹{{gst|floatformat:2}}</span>
 </div>
 
-<div class="summary-item total">
+<div class="total">
 <span>Total</span>
-<span>₹{{final_total}}</span>
+<span id="total">₹{{final_total|floatformat:2}}</span>
+</div>
+
+<div class="coupon-box">
+
+<input 
+type="text"
+id="couponCode"
+class="coupon-input"
+placeholder="Enter coupon code">
+
+<button 
+class="coupon-btn"
+onclick="applyCoupon()">
+
+Apply
+
+</button>
+
+</div>
+
+<div id="couponSuccess" class="coupon-success">
+
+<div class="coupon-check">✔</div>
+
+<div>
+
+<p class="coupon-text">Coupon applied</p>
+<p class="coupon-save">You saved ₹<span id="couponAmount"></span></p>
+
+</div>
+
+</div>
+<div class="checkout-info">
+
+<div class="security">
+
+<div class="secure-row">
+
+<img src="https://img.icons8.com/fluency/48/lock.png">
+<span>Secure Payment</span>
+
+</div>
+
+<div class="cards">
+
+<img src="https://img.icons8.com/color/48/visa.png">
+<img src="https://img.icons8.com/color/48/mastercard.png">
+<img src="https://img.icons8.com/color/48/google-pay.png">
+<img src="{% static 'images/upi.svg' %}" width="40" alt="UPI">
+
+</div>
+
+</div>
+
+</div>
 </div>
 
 </div>
 
 </div>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer">
+
+<div class="footer-inner">
+
+<!-- BRAND -->
+
+<div class="footer-col brand">
+
+  <div class="brand-row">
+    <img src="{% static 'images/icons/logo.png' %}" alt="Subio Foods Logo" class="footer-logo">
+  </div>
+
+  <p class="brand-text">
+    Naturally grown millets & spices  from trusted farmers to healthy homes.
+  </p>
+
+  <div class="social">
+    <div>
+  <a href="#" style="display:inline-block;margin-right:12px;">
+    <img src="{% static 'images/facebook.png' %}" width="20">
+  </a>
+
+  <a href="#" style="display:inline-block;margin-right:12px;">
+    <img src="{% static 'images/instagram.png' %}" width="20">
+  </a>
+
+  <a href="#" style="display:inline-block;">
+    <img src="{% static 'images/twitter.png' %}" width="20">
+  </a>
+</div>
+</div>
+
+</div>
+
+<!-- COMPANY -->
+
+<div class="footer-col">
+  <h4>Company</h4>
+  <a href="{% url 'home' %}">About Us</a>
+  <a href="{% url 'products' %}">Products</a>
+  <a href="#contact">Contact</a>
+</div>
+
+<!-- SUPPORT -->
+
+<div class="footer-col">
+  <h4>Support</h4>
+  <a href="#">FAQs</a>
+  <a href="#">Shipping Policy</a>
+  <a href="#">Terms & Conditions</a>
+  <a href="#">Privacy Policy</a>
+</div>
+
+<!-- NEWSLETTER -->
+
+<div class="footer-col offers">
+
+<h4>Get Exclusive Offers</h4>
+
+<form class="offer-form" id="newsletterForm"
+      data-url="{% url 'newsletter' %}"
+      method="post">
+
+{% csrf_token %}
+
+<input type="email"
+       id="newsletterEmail"
+       name="email"
+       placeholder="Enter your email"
+       required>
+
+<button type="submit">Subscribe</button>
+
+</form>
+
+<p id="newsletterMsg"></p>
+
+<div class="contact">
+<p><strong>Contact</strong></p>
+<p>subiofoods@gmail.com</p>
+<p>+91 96068 23003</p>
+</div>
+
+</div>
+
+</div>
+
+<div class="footer-bottom">
+<p>© 2026 Subio Foods. All rights reserved.</p>
+</div>
+
+</footer>
+
+<!-- LOGOUT MODAL -->
+<div id="logoutModal" class="logout-modal">
+
+  <div class="logout-box">
+    <h3>Logout?</h3>
+    <p>Are you sure you want to logout?</p>
+
+    <div class="logout-actions">
+      <button id="cancelLogout">Cancel</button>
+      <button id="confirmLogout">Logout</button>
+    </div>
+  </div>
+
+</div>
+
+<form id="logoutForm" method="POST" action="{% url 'logout' %}">
+    {% csrf_token %}
+</form>
+
+</div>
+
+<!-- ADDRESS MODAL -->
+
+<div class="modal" id="addressModal">
+
+<div class="modal-box">
+
+<h3>Add / Edit Address</h3>
+
+<input id="label" placeholder="Label (Home / Office)">
+
+<textarea id="addressText" placeholder="Full Address"></textarea>
+
+<button class="btn btn-primary" onclick="saveAddress()">
+Save Address
+</button>
+
+<button class="btn btn-secondary" onclick="closeModal()">
+Cancel
+</button>
+
+</div>
+
+</div>
+
+{% include "cart_drawer.html" %}
+<script src="{% static 'js/navbar.js' %}"></script>
+<script src="{% static 'js/scroll.js' %}"></script>
+<script src="{% static 'js/shop.js' %}"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script>
 
-/* ADD ADDRESS TOGGLE */
+/* GLOBAL VARIABLE FOR EDIT ADDRESS */
+let editingAddressId = null
 
-function toggleAddressForm(){
+/* SECTION CONTROL */
 
-let form=document.getElementById("newAddressForm")
+function openSection(step){
 
-form.style.display = form.style.display === "none" ? "block" : "none"
+document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"))
+document.getElementById("section"+step).classList.add("active")
+
+let bars=document.querySelectorAll(".bar")
+
+bars.forEach(b=>b.classList.remove("active"))
+
+for(let i=0;i<step;i++){
+bars[i].classList.add("active")
+}
 
 }
 
-/* STEP NAVIGATION */
+/* ADDRESS SELECT */
 
-function goToPayment(){
+document.querySelectorAll(".address").forEach(card=>{
 
-document.getElementById("step1").style.display="none"
-document.getElementById("step2").style.display="block"
+card.onclick=()=>{
 
-document.querySelectorAll(".step")[0].classList.remove("active")
-document.querySelectorAll(".step")[0].classList.add("completed")
+document.querySelectorAll(".address").forEach(a=>a.classList.remove("selected"))
 
-document.querySelectorAll(".step")[1].classList.add("active")
+card.classList.add("selected")
 
-}
-
-function backToAddress(){
-
-document.getElementById("step2").style.display="none"
-document.getElementById("step1").style.display="block"
-
-document.querySelectorAll(".step")[1].classList.remove("active")
-document.querySelectorAll(".step")[0].classList.remove("completed")
-document.querySelectorAll(".step")[0].classList.add("active")
+card.querySelector("input").checked=true
 
 }
+
+})
 
 /* PAYMENT */
 
 function payNow(){
 
 let payment=document.querySelector('input[name="payment"]:checked').value
-let address=document.querySelector('input[name="address_id"]:checked')
 
-if(!address){
+if(payment==="cod"){
 
-alert("Please select address")
+document.getElementById("orderForm").submit()
 return
 
 }
 
-document.getElementById("selectedAddressText").innerText=address.parentElement.innerText
+var options = {
 
-if(payment==="cod"){
+key: "{{ razorpay_key }}",
 
-document.getElementById("paymentMethodText").innerText="Cash on Delivery"
-completeStep()
+amount: "{{ final_total|floatformat:0 }}00",
+
+currency: "INR",
+
+name: "Subio Foods",
+
+description: "Order Payment",
+
+order_id: "{{ razorpay_order_id }}",
+
+handler: function (response) {
+
+    console.log("Razorpay Payment ID:", response.razorpay_payment_id);
+
+    document.getElementById("razorpay_payment_id").value =
+        response.razorpay_payment_id;
+
+    document.getElementById("orderForm").submit();
+}
 
 }
 
-else{
+var rzp = new Razorpay(options)
 
-document.getElementById("paymentMethodText").innerText="Online Payment"
-
-var options={
-
-"key":"{{razorpay_key}}",
-"amount":"{{final_total|floatformat:0}}00",
-"currency":"INR",
-"name":"Subio Foods",
-"description":"Order Payment",
-"order_id":"{{razorpay_order_id}}",
-
-"handler":function(response){
-
-completeStep()
-
-}
-
-};
-
-var rzp=new Razorpay(options)
 rzp.open()
 
 }
 
+
+function applyCoupon(){
+
+let code = document.getElementById("couponCode").value.trim()
+
+if(!code){
+alert("Enter coupon code")
+return
 }
 
-/* COMPLETE */
+let btn = document.querySelector(".coupon-btn")
+btn.innerText = "Applying..."
+btn.disabled = true
 
-function completeStep(){
+fetch("/apply-coupon/",{
+method:"POST",
+headers:{
+"Content-Type":"application/x-www-form-urlencoded",
+"X-CSRFToken":"{{ csrf_token }}"
+},
+body:"code="+encodeURIComponent(code)
+})
+.then(res=>res.json())
+.then(data=>{
 
-document.getElementById("step2").style.display="none"
-document.getElementById("step3").style.display="block"
+btn.innerText="Apply"
+btn.disabled=false
 
-document.querySelectorAll(".step")[1].classList.remove("active")
-document.querySelectorAll(".step")[1].classList.add("completed")
+if(data.success){
 
-document.querySelectorAll(".step")[2].classList.add("active")
+let total = parseFloat(
+document.getElementById("total").innerText.replace("₹","")
+)
 
-/* submit order to backend after 2 seconds */
+let newTotal = total - data.discount
 
-setTimeout(function(){
+if(newTotal < 0){
+newTotal = 0
+}
 
-document.querySelector("form").submit()
+document.getElementById("total").innerText = "₹" + newTotal.toFixed(2)
 
-},2000)
+/* SUCCESS MESSAGE */
+
+document.getElementById("couponAmount").innerText = data.discount
+
+let box = document.getElementById("couponSuccess")
+
+box.style.display="flex"
+
+setTimeout(()=>{
+box.style.display="none"
+},4000)
+
+}else{
+
+alert(data.message)
+
+}
+
+})
+.catch(()=>{
+btn.innerText="Apply"
+btn.disabled=false
+alert("Something went wrong")
+})
+
+}
+
+function deleteAddress(id){
+
+if(!confirm("Delete this address?")) return
+
+fetch(`/delete-extra-address/${id}/`,{
+method:"POST",
+headers:{
+"X-CSRFToken":"{{ csrf_token }}"
+}
+})
+.then(res=>res.json())
+.then(data=>{
+
+if(data.success){
+
+location.reload()
+
+}else{
+
+alert(data.error || "Cannot delete address")
+
+}
+
+})
+
+}
+
+function saveAddress(){
+
+let label = document.getElementById("label").value
+let address = document.getElementById("addressText").value
+
+let url = "/add-extra-address/"
+let body = "label="+encodeURIComponent(label)+"&address="+encodeURIComponent(address)
+
+if(editingAddressId){
+url = "/edit-address/"+editingAddressId+"/"
+}
+
+fetch(url,{
+method:"POST",
+headers:{
+"Content-Type":"application/x-www-form-urlencoded",
+"X-CSRFToken":"{{ csrf_token }}"
+},
+body:body
+})
+.then(res=>res.json())
+.then(data=>{
+
+location.reload()
+
+})
+
+}
+
+function editAddress(id,label,address){
+
+editingAddressId = id
+
+openModal()
+
+document.getElementById("label").value = label
+document.getElementById("addressText").value = address
+
+}
+
+function openModal(){
+
+document.getElementById("addressModal").style.display="flex"
+
+}
+
+function closeModal(){
+
+document.getElementById("addressModal").style.display="none"
+
+editingAddressId = null
+
+document.getElementById("label").value=""
+document.getElementById("addressText").value=""
 
 }
 
