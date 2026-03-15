@@ -1,0 +1,49 @@
+[33mf100e9c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Fix google login and order error
+[33m0d44f2e[m fix login
+[33m37ff541[m fix google login
+[33m4497d40[m fix google login
+[33m31ca865[m fix settings
+[33ma1a77cb[m fix ProductsConfig error
+[33m6226105[m fix google login production
+[33m7aa20c9[m fix render 500 error
+[33m5582a2f[m Fix Render OAuth and signals
+[33m9691fcb[m 2.5 update
+[33me7e9a59[m 2.5 update
+[33m71cbaf4[m added invoice dependencies
+[33m7e0a5b0[m fix render deployment
+[33m6a3ff90[m 2.4 update
+[33m189852e[m 2.3 update
+[33md46efe8[m 2.3 update
+[33mb09b763[m 2.2 update
+[33mc787bc7[m 2.1 update
+[33m519ee4a[m 2.0 update
+[33mb813b54[m Force pip via render.yaml
+[33mb935522[m poetry completely
+[33m9b90981[m Remove poetry completely
+[33m5eaab1c[m Remove poetry, fix django install
+[33m71230df[m Fix static serving
+[33m2239baa[m fix2
+[33m733c45a[m fix1
+[33macbb380[m Final
+[33mc7c76c7[m Final Render Neon settings
+[33mea3ba8d[m Final Render Neon settings
+[33m70fba54[m Fix Render infinite loading
+[33m8e22918[m admin fix
+[33m5d366d9[m admin
+[33m0710dd9[m fix
+[33m6ed416c[m fix staticfiles dirs
+[33me688f37[m fix staticfiles dirs
+[33m7d1148b[m fix staticfiles dirs
+[33macab41a[m logo
+[33m2bfeeb4[m admin
+[33m275c1a6[m fix database url fallback + createsu
+[33m5bda08c[m add postgres support
+[33m0f4d20e[m image css update
+[33m6081ebf[m image css update
+[33md6abf96[m remove manifest storage
+[33mb784648[m full clean settings
+[33m4b2a5bf[m django6 staticfiles fix
+[33m779bbe6[m fix whitenoise static
+[33m7b3ed6a[m fix static files for render
+[33m0c65759[m render deploy setup
+[33m7285e5a[m Initial commit
