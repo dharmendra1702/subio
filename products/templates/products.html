@@ -4,6 +4,7 @@
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/user_products.css' %}">
@@ -230,7 +231,7 @@ data-stock="{{ p.stock }}">
 
 <a href="{% url 'product_detail' p.id %}">
 {% if p.image %}
-<img src="{{ p.image.url }}" loading="lazy" width="300" height="240" data-product-image="{{ p.id }}">
+<img src="{{ p.image.url }}" loading="lazy" data-product-image="{{ p.id }}">
 {% else %}
 <img src="{% static 'images/all.png' %}" loading="lazy">
 {% endif %}
