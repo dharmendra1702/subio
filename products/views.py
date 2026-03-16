@@ -490,18 +490,18 @@ def profile(request):
     addresses = Address.objects.filter(user=request.user)
     mobiles = MobileNumber.objects.filter(user=request.user)
 
-    primary_mobile = mobiles.filter(is_primary=True).first()
-    primary_mobile = primary_mobile.mobile if primary_mobile else ""
+    primary_mobile_obj = mobiles.filter(is_primary=True).first()
+    primary_mobile = primary_mobile_obj.mobile if primary_mobile_obj else ""
 
     cart = request.session.get("cart", {})
+    cart_count = sum(i["quantity"] for i in cart.values())
 
     return render(request, "profile.html", {
         "profile": profile,
         "extra_addresses": addresses,
         "extra_mobiles": mobiles,
         "primary_mobile": primary_mobile,
-        "cart_count": sum(i["quantity"] for i in cart.values()),
-        "user": request.user
+        "cart_count": cart_count,
     })
 
 
