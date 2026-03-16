@@ -965,10 +965,7 @@ def place_order(request):
 
     OrderItem.objects.bulk_create(order_items)
 
-    try:
-        send_order_email(request, order)
-    except Exception as e:
-        print("Email failed:", e)
+    print("Order placed successfully:", order.order_id)
     # CLEAR CART
     request.session["cart"] = {}
     request.session["coupon_discount"] = 0
