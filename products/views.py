@@ -217,7 +217,6 @@ def inline_add_product(request,cat_id):
 
 
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Product
 from django.contrib.admin.views.decorators import staff_member_required
 
 
@@ -409,7 +408,6 @@ def update_cart(request):
     return JsonResponse({"status":"ok"})
 
 import random
-from .models import Product
 
 @login_required
 def cart_view(request):
@@ -495,11 +493,14 @@ def profile(request):
     primary_mobile = mobiles.filter(is_primary=True).first()
     primary_mobile = primary_mobile.mobile if primary_mobile else ""
 
+    cart = request.session.get("cart", {})
+
     return render(request, "profile.html", {
         "profile": profile,
         "extra_addresses": addresses,
         "extra_mobiles": mobiles,
         "primary_mobile": primary_mobile,
+        "cart_count": sum(i["quantity"] for i in cart.values()),
         "user": request.user
     })
 

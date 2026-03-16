@@ -653,20 +653,6 @@ function csrfFD() {
   return fd;
 }
 
-/* ========== Personal edit ========== */
-function enableProfileEdit() {
-
-  editMode = true;
-
-  document.querySelectorAll("#profileForm input.editable").forEach(i=>{
-      i.removeAttribute("readonly");
-  });
-
-  document.querySelector(".save-btn").style.display="inline-block";
-
-  document.getElementById("usernamePen").classList.remove("disabled");
-  document.getElementById("emailPen").classList.remove("disabled");
-}
 
 /* ========== Username / Email popups ========== */
 function openUsernamePopup() {
