@@ -1,5 +1,4 @@
 import uuid
-
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
@@ -10,6 +9,7 @@ from django.conf import settings
 from .models import Category
 from decimal import ROUND_HALF_UP, Decimal
 import os
+from .models import Order, OrderItem, Product, Address
 
 def home(request):
     categories = Category.objects.all()
@@ -864,7 +864,7 @@ from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from django.contrib import messages
-from .models import Order, OrderItem, Product, Address
+
 
 @login_required
 @transaction.atomic
@@ -965,7 +965,10 @@ def place_order(request):
 
     OrderItem.objects.bulk_create(order_items)
 
-    send_order_email(request, order)
+    try:
+        send_order_email(request, order)
+    except Exception as e:
+        print("Email failed:", e)
     # CLEAR CART
     request.session["cart"] = {}
     request.session["coupon_discount"] = 0
