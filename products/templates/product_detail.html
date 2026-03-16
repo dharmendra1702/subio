@@ -1,5 +1,6 @@
 {% load static %}
 {% load cart_tags %}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{% static 'css/product_detail.css' %}">
 <link rel="stylesheet" href="{% static 'css/header_footer.css' %}">
@@ -156,7 +157,9 @@ Cart (<span id="cartCount">{{ cart_count|default:"0" }}</span>)
 
 <h1 data-product-name="{{ product.id }}">{{ product.name }}</h1>
 
-<div class="price" data-product-price="{{ product.id }}">
+<div class="price"
+     data-product-price="{{ product.id }}"
+     data-price="{{ product.price }}">
 ₹{{ product.price }}
 </div>
 

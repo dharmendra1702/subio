@@ -1,0 +1,430 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Order Details | Subio Foods</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Poppins',sans-serif;
+}
+
+body{
+background:#f4f6f8;
+}
+
+/* PAGE */
+
+.container{
+max-width:1050px;
+margin:auto;
+padding:110px 20px 60px;
+}
+
+.title{
+font-size:30px;
+font-weight:600;
+margin-bottom:25px;
+}
+
+/* CARD */
+
+.card{
+background:white;
+padding:35px;
+border-radius:12px;
+border:1px solid #e5e5e5;
+}
+
+/* HEADER */
+
+.order-header{
+display:flex;
+justify-content:space-between;
+flex-wrap:wrap;
+margin-bottom:25px;
+gap:10px;
+}
+
+.order-id{
+font-weight:600;
+color:#2e7d32;
+font-size:17px;
+}
+
+.date{
+font-size:13px;
+color:#777;
+margin-top:4px;
+}
+
+/* STATUS */
+
+.status{
+display:inline-block;
+margin-top:6px;
+padding:6px 12px;
+border-radius:6px;
+font-size:12px;
+font-weight:500;
+text-transform:capitalize;
+}
+
+.pending{background:#fff3cd;color:#856404;}
+.processing{background:#e2e3ff;color:#383d8b;}
+.shipped{background:#cce5ff;color:#004085;}
+.delivered{background:#d4edda;color:#155724;}
+.cancelled{background:#f8d7da;color:#721c24;}
+
+/* ADDRESS */
+
+.address{
+margin:15px 0 25px;
+font-size:14px;
+color:#444;
+}
+
+/* PRODUCTS */
+
+.product{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:15px 0;
+border-bottom:1px solid #eee;
+}
+
+.product-left{
+display:flex;
+align-items:center;
+gap:15px;
+}
+
+.product img{
+width:65px;
+height:65px;
+border-radius:6px;
+object-fit:cover;
+border:1px solid #eee;
+}
+
+/* SUMMARY */
+
+.summary{
+margin-top:25px;
+border-top:1px solid #eee;
+padding-top:15px;
+}
+
+.row{
+display:flex;
+justify-content:space-between;
+padding:7px 0;
+font-size:14px;
+}
+
+.total{
+font-size:18px;
+font-weight:600;
+margin-top:10px;
+}
+
+/* BUTTONS */
+
+.buttons{
+margin-top:25px;
+display:flex;
+gap:12px;
+flex-wrap:wrap;
+}
+
+.btn{
+padding:10px 18px;
+border-radius:6px;
+text-decoration:none;
+font-size:14px;
+border:none;
+cursor:pointer;
+}
+
+.track{background:#2e7d32;color:white;}
+.invoice{background:#1976d2;color:white;}
+.cancel{background:#d32f2f;color:white;}
+
+/* MODAL */
+
+.modal{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.45);
+display:none;
+align-items:center;
+justify-content:center;
+z-index:1000;
+}
+
+.modal-content{
+background:white;
+padding:30px;
+border-radius:12px;
+width:95%;
+max-width:500px;
+}
+
+.close{
+float:right;
+font-size:20px;
+cursor:pointer;
+}
+
+/* TRACKING TIMELINE */
+
+.timeline{
+margin-top:20px;
+border-left:3px solid #e0e0e0;
+padding-left:20px;
+}
+
+.timeline-step{
+margin-bottom:20px;
+position:relative;
+}
+
+.timeline-step::before{
+content:"";
+width:12px;
+height:12px;
+background:#ccc;
+border-radius:50%;
+position:absolute;
+left:-27px;
+top:5px;
+}
+
+.timeline-step.active::before{
+background:#2e7d32;
+}
+
+.step-title{
+font-size:15px;
+font-weight:500;
+}
+
+.step-time{
+font-size:12px;
+color:#777;
+margin-top:2px;
+}
+
+/* MOBILE */
+
+@media(max-width:768px){
+
+.product{
+flex-direction:column;
+align-items:flex-start;
+gap:10px;
+}
+
+.order-header{
+flex-direction:column;
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1 class="title">Order Details</h1>
+
+<div class="card">
+
+<div class="order-header">
+
+<div>
+<div class="order-id">Order ID: {{order.order_id}}</div>
+<div class="date">{{order.created_at|date:"d M Y, h:i A"}}</div>
+</div>
+
+<div>
+Payment: {{order.payment_method|title}}<br>
+<span class="status {{order.status}}">{{order.status}}</span>
+</div>
+
+</div>
+
+<div class="address">
+<strong>Delivery Address:</strong> {{order.address}}
+</div>
+
+<!-- PRODUCTS -->
+
+{% for item in order.items.all %}
+
+<div class="product">
+
+<div class="product-left">
+
+{% if item.product.image %}
+<img src="{{item.product.image.url}}">
+{% else %}
+<img src="{% static 'images/no-product.png' %}">
+{% endif %}
+
+<div>
+<div>{{item.product.name}}</div>
+<small>Qty: {{item.quantity}}</small>
+</div>
+
+</div>
+
+<div>₹{{item.price}}</div>
+
+</div>
+
+{% endfor %}
+
+<!-- PRICE SUMMARY -->
+
+<div class="summary">
+
+<div class="row">
+<span>Subtotal</span>
+<span>₹{{order.subtotal}}</span>
+</div>
+
+<div class="row">
+<span>GST</span>
+<span>₹{{order.gst}}</span>
+</div>
+
+<div class="row">
+<span>Delivery Fee</span>
+<span>₹{{order.shipping_fee}}</span>
+</div>
+
+{% if order.coupon_discount > 0 %}
+<div class="row">
+<span>Coupon Discount</span>
+<span>- ₹{{order.coupon_discount}}</span>
+</div>
+{% endif %}
+
+<div class="row total">
+<span>Total</span>
+<span>₹{{order.total}}</span>
+</div>
+
+</div>
+
+<!-- BUTTONS -->
+
+<div class="buttons">
+
+<button class="btn track" onclick="openTracking()">Track Shipment</button>
+
+<a href="{% url 'download_invoice' order.order_id %}" class="btn invoice">
+Download Invoice
+</a>
+
+{% if order.status == "pending" or order.status == "processing" %}
+<a href="/cancel-order/{{order.order_id}}/" class="btn cancel">
+Cancel Order
+</a>
+{% endif %}
+
+</div>
+
+</div>
+
+</div>
+
+<!-- TRACKING POPUP -->
+
+<div class="modal" id="trackingModal">
+
+<div class="modal-content">
+
+<span class="close" onclick="closeTracking()">×</span>
+
+<h3>Shipment Tracking</h3>
+
+<div class="timeline">
+
+<div class="timeline-step active">
+<div class="step-title">Order Placed</div>
+<div class="step-time">{{order.created_at|date:"d M Y, h:i A"}}</div>
+</div>
+
+<div class="timeline-step {% if order.status != 'pending' %}active{% endif %}">
+<div class="step-title">Processing at warehouse</div>
+<div class="step-time">
+{% if order.status != 'pending' %}
+{{order.created_at|date:"d M Y"}}  •  Processing
+{% else %}
+Waiting to process
+{% endif %}
+</div>
+</div>
+
+<div class="timeline-step {% if order.status == 'shipped' or order.status == 'delivered' %}active{% endif %}">
+<div class="step-title">Shipped</div>
+<div class="step-time">
+{% if order.status == 'shipped' or order.status == 'delivered' %}
+Package shipped
+{% else %}
+Pending shipment
+{% endif %}
+</div>
+</div>
+
+<div class="timeline-step {% if order.status == 'delivered' %}active{% endif %}">
+<div class="step-title">Delivered</div>
+<div class="step-time">
+{% if order.status == 'delivered' %}
+Delivered successfully
+{% else %}
+Expected soon
+{% endif %}
+</div>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+function openTracking(){
+document.getElementById("trackingModal").style.display="flex";
+}
+
+function closeTracking(){
+document.getElementById("trackingModal").style.display="none";
+}
+
+</script>
+
+</body>
+</html>

@@ -522,6 +522,206 @@ transform:translateY(0);
 }
 
 }
+
+/* ================= RESPONSIVE IMPROVEMENTS ================= */
+
+/* ===== Tablet ===== */
+
+@media (max-width:1024px){
+
+.checkout-container{
+padding:20px 4%;
+}
+
+.grid{
+gap:30px;
+}
+
+.summary{
+position:relative;
+top:auto;
+max-height:none;
+}
+
+.summary-products{
+max-height:220px;
+}
+
+}
+
+/* ===== Mobile Layout ===== */
+
+@media (max-width:768px){
+
+.checkout-container{
+padding:20px 16px;
+}
+
+.progress{
+margin-bottom:20px;
+}
+
+.grid{
+grid-template-columns:1fr;
+gap:25px;
+}
+
+/* Sections */
+
+.section-header{
+font-size:15px;
+padding:16px;
+}
+
+.section-body{
+padding:16px;
+}
+
+/* Address cards */
+
+.address{
+padding:14px;
+font-size:14px;
+}
+
+.address-actions{
+position:static;
+margin-top:8px;
+justify-content:flex-end;
+}
+
+/* Payment cards */
+
+.payment{
+flex-direction:column;
+align-items:flex-start;
+gap:8px;
+font-size:14px;
+}
+
+.payment-icons{
+margin-top:6px;
+}
+
+/* Summary */
+
+.summary{
+padding:18px;
+}
+
+.product{
+font-size:14px;
+}
+
+.product img{
+width:40px;
+height:40px;
+}
+
+/* Coupon */
+
+.coupon-box{
+flex-direction:column;
+}
+
+.coupon-input{
+width:100%;
+}
+
+.coupon-btn{
+width:100%;
+}
+
+/* Buttons */
+
+.btn{
+padding:12px;
+font-size:14px;
+}
+
+}
+
+/* ===== Small Mobile ===== */
+
+@media (max-width:480px){
+
+.checkout-container{
+padding:16px 12px;
+}
+
+.summary{
+padding:16px;
+}
+
+.product{
+gap:8px;
+}
+
+.product span{
+font-size:13px;
+}
+
+.row{
+font-size:14px;
+}
+
+.total{
+font-size:16px;
+}
+
+/* Modal */
+
+.modal-box{
+width:90%;
+padding:20px;
+}
+
+/* Processing animation */
+
+.processing-box h2{
+font-size:20px;
+}
+
+.processing-box p{
+font-size:14px;
+}
+
+.cart{
+font-size:48px;
+}
+
+}
+
+/* ===== Ultra Small Screens ===== */
+
+@media (max-width:360px){
+
+.section-header{
+font-size:14px;
+}
+
+.btn{
+font-size:13px;
+}
+
+.product span{
+font-size:12px;
+}
+
+}
+
+#orderProcessing{
+display:none;
+position:fixed;
+inset:0;
+background:white;
+z-index:99999;
+
+justify-content:center;
+align-items:center;
+flex-direction:column;
+}
+
 </style>
 </head>
 

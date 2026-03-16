@@ -49,13 +49,19 @@ urlpatterns = [
     path("add-extra-address/", views.add_extra_address),
     path("order-success/<str:order_id>/", views.order_success, name="order_success"),
     path("invoice/<str:order_id>/", views.download_invoice, name="download_invoice"),
+    path("order/<str:order_id>/", views.order_detail, name="order_detail"),
+    path("cancel-order/<str:order_id>/", views.cancel_order),
+    path("track/<str:order_id>/", views.track_order),
     # ================= NEWSLETTER =================
     path("newsletter/", views.newsletter_subscribe, name="newsletter"),
     path("newsletter/unsubscribe/<uuid:token>/", views.newsletter_unsubscribe, name="newsletter_unsubscribe"),
 
     # ================= ADMIN DASHBOARD =================
     path("dashboard/", views.admin_dashboard, name="admin_dashboard"),
-
+    path("dashboard/orders/",views.admin_orders,name="admin_orders"),
+    path("dashboard/orders/<str:order_id>/",views.admin_order_detail,name="admin_order_detail"),
+    path("dashboard/api/stats/", views.dashboard_stats),
+    
     # ================= ADMIN PRODUCTS =================
     path("products-admin/", views.products_admin, name="products_admin"),
     path("product/add/", views.add_product, name="add_product"),

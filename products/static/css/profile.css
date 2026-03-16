@@ -1,4 +1,6 @@
-/* ===== GLOBAL ===== */
+/* =====================================
+GLOBAL
+===================================== */
 
 *{
 margin:0;
@@ -10,10 +12,17 @@ font-family:"Inter",sans-serif;
 body{
 background:#f5f5f5;
 color:#222;
+line-height:1.5;
 }
 
+img{
+max-width:100%;
+display:block;
+}
 
-/* ===== PAGE CONTAINER ===== */
+/* =====================================
+MAIN CONTAINER
+===================================== */
 
 .profile-container{
 max-width:1000px;
@@ -21,44 +30,49 @@ margin:60px auto;
 padding:0 20px;
 display:flex;
 flex-direction:column;
-gap:35px;
+gap:30px;
 }
 
-
-/* ===== PROFILE HEADER ===== */
+/* =====================================
+PROFILE HERO
+===================================== */
 
 .profile-hero{
 display:flex;
 align-items:center;
 gap:25px;
-background:white;
+background:#fff;
 padding:25px;
 border-radius:14px;
 box-shadow:0 2px 10px rgba(0,0,0,0.06);
 }
 
 .profile-avatar{
-position:relative;
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:10px;
 }
 
 .profile-avatar img{
-width:90px;
-height:90px;
+width:100px;
+height:100px;
 border-radius:50%;
 object-fit:cover;
 border:3px solid #eee;
 }
 
-.avatar-upload{
-position:absolute;
-bottom:0;
-right:0;
+.upload-btn{
 background:#111;
-color:white;
-padding:5px;
-border-radius:50%;
-font-size:12px;
+color:#fff;
+padding:6px 14px;
+border-radius:6px;
+font-size:13px;
 cursor:pointer;
+}
+
+.upload-btn:hover{
+background:#333;
 }
 
 .profile-info h2{
@@ -74,29 +88,34 @@ margin-top:3px;
 .profile-meta{
 margin-top:6px;
 display:flex;
-gap:18px;
+gap:16px;
 font-size:14px;
 color:#666;
+flex-wrap:wrap;
 }
 
-
-/* ===== CARD ===== */
+/* =====================================
+DASHBOARD CARDS
+===================================== */
 
 .dashboard-card{
-background:white;
+background:#fff;
 padding:25px;
 border-radius:14px;
 box-shadow:0 2px 10px rgba(0,0,0,0.06);
 }
 
-
-/* ===== CARD HEADER ===== */
+/* =====================================
+CARD HEADER
+===================================== */
 
 .card-header{
 display:flex;
 justify-content:space-between;
 align-items:center;
 margin-bottom:20px;
+flex-wrap:wrap;
+gap:10px;
 }
 
 .card-header h3{
@@ -104,8 +123,9 @@ font-size:18px;
 font-weight:600;
 }
 
-
-/* ===== BUTTONS ===== */
+/* =====================================
+BUTTONS
+===================================== */
 
 .btn-primary,
 .btn-secondary{
@@ -118,19 +138,20 @@ cursor:pointer;
 
 .btn-primary{
 background:#111;
-color:white;
-}
-
-.btn-secondary{
-background:#e5e5e5;
+color:#fff;
 }
 
 .btn-primary:hover{
 opacity:.9;
 }
 
+.btn-secondary{
+background:#e5e5e5;
+}
 
-/* ===== FORM ===== */
+/* =====================================
+FORM GRID
+===================================== */
 
 .form-grid{
 display:grid;
@@ -149,7 +170,8 @@ color:#666;
 margin-bottom:5px;
 }
 
-input{
+input,
+select{
 width:100%;
 padding:10px;
 border-radius:6px;
@@ -157,13 +179,21 @@ border:1px solid #ddd;
 font-size:14px;
 }
 
-input:focus{
+input:focus,
+select:focus{
 outline:none;
 border-color:#111;
 }
 
+input[readonly],
+select:disabled{
+background:#f7f7f7;
+color:#777;
+}
 
-/* ===== EDIT ICON ===== */
+/* =====================================
+EDIT ICON
+===================================== */
 
 .email-display{
 position:relative;
@@ -187,10 +217,9 @@ opacity:.3;
 pointer-events:none;
 }
 
-
-/* ============================= */
-/* ADDRESS LIST DESIGN */
-/* ============================= */
+/* =====================================
+ADDRESS LIST
+===================================== */
 
 .address-grid{
 display:flex;
@@ -202,17 +231,10 @@ gap:16px;
 display:flex;
 justify-content:space-between;
 align-items:center;
-
-padding:18px 22px;
-
+padding:18px;
 border:1px solid #e6e6e6;
 border-radius:12px;
 background:#fafafa;
-transition:0.2s;
-}
-
-.address-card:hover{
-background:#f3f3f3;
 }
 
 .address-info{
@@ -222,28 +244,24 @@ gap:4px;
 }
 
 .address-info h4{
+display:flex;
+align-items:center;
+gap:8px;
 font-size:16px;
 font-weight:600;
 }
 
+
+
 .address-info p{
 font-size:14px;
 color:#666;
+word-break:break-word;
 }
 
-.badge{
-display:inline-block;
-margin-top:4px;
-font-size:12px;
-background:#e9e9e9;
-padding:4px 10px;
-border-radius:6px;
-}
-
-
-/* ============================= */
-/* MOBILE LIST DESIGN */
-/* ============================= */
+/* =====================================
+MOBILE LIST
+===================================== */
 
 .mobile-grid{
 display:flex;
@@ -255,9 +273,7 @@ gap:16px;
 display:flex;
 justify-content:space-between;
 align-items:center;
-
-padding:18px 22px;
-
+padding:18px;
 border:1px solid #e6e6e6;
 border-radius:12px;
 background:#fafafa;
@@ -267,19 +283,27 @@ background:#fafafa;
 font-size:15px;
 }
 
-.mobile-info strong{
-font-weight:600;
+/* =====================================
+BADGE
+===================================== */
+
+.badge{
+background:#f2f2f2;
+color:#333;
+font-weight:500;
+font-size:11px;
+padding:3px 8px;
+border-radius:6px;
 }
 
-
-/* ============================= */
-/* ACTION BUTTONS */
-/* ============================= */
+/* =====================================
+ACTIONS
+===================================== */
 
 .card-actions{
 display:flex;
-align-items:center;
 gap:10px;
+flex-wrap:wrap;
 }
 
 .card-actions button{
@@ -292,17 +316,13 @@ background:#111;
 color:white;
 }
 
-.card-actions button:hover{
-background:#333;
-}
-
 .delete-btn{
-padding:7px 10px;
 background:#d11a2a;
 }
 
-
-/* ===== SAVE BUTTON ===== */
+/* =====================================
+SAVE BUTTON
+===================================== */
 
 .save-btn{
 margin-top:15px;
@@ -314,33 +334,9 @@ border-radius:6px;
 cursor:pointer;
 }
 
-
-/* ===== RESPONSIVE ===== */
-
-@media(max-width:700px){
-
-.profile-hero{
-flex-direction:column;
-align-items:flex-start;
-}
-
-.form-grid{
-grid-template-columns:1fr;
-}
-
-.address-card,
-.mobile-card{
-flex-direction:column;
-align-items:flex-start;
-gap:10px;
-}
-
-.card-actions{
-width:100%;
-justify-content:flex-end;
-}
-
-}
+/* =====================================
+MODAL
+===================================== */
 
 .modal{
 display:none;
@@ -353,166 +349,75 @@ background:rgba(0,0,0,0.4);
 justify-content:center;
 align-items:center;
 z-index:999;
+padding:20px;
 }
 
 .modal-box{
-background:white;
+background:#fff;
 padding:25px;
 border-radius:10px;
 width:350px;
+max-width:95%;
 display:flex;
 flex-direction:column;
 gap:12px;
-}
-
-.modal-box textarea{
-padding:10px;
-border:1px solid #ddd;
-border-radius:6px;
-resize:none;
-height:80px;
 }
 
 .modal-actions{
 display:flex;
 justify-content:flex-end;
 gap:10px;
-margin-top:10px;
 }
 
-.modal-actions button{
-padding:8px 14px;
-border:none;
-border-radius:6px;
-cursor:pointer;
-background:#111;
-color:white;
+/* =====================================
+TABLET
+===================================== */
+
+@media (max-width:900px){
+
+.profile-container{
+margin:40px auto;
 }
 
-.badge{
-display:inline-block;
-margin-left:8px;
-font-size:11px;
-background:#e9e9e9;
-padding:3px 8px;
-border-radius:6px;
-vertical-align:middle;
+.form-grid{
+grid-template-columns:1fr;
 }
 
-.profile-avatar{
-display:flex;
+.address-card,
+.mobile-card{
 flex-direction:column;
-align-items:center;
+align-items:flex-start;
 gap:10px;
 }
 
-.profile-avatar img{
-width:110px;
-height:110px;
-border-radius:50%;
-object-fit:cover;
-border:3px solid #eee;
-}
-
-.upload-btn{
-background:#111;
-color:white;
-padding:6px 14px;
-border-radius:6px;
-font-size:13px;
-cursor:pointer;
-}
-
-.upload-btn:hover{
-background:#333;
-}
-
-/* ===== SELECT DROPDOWN (Gender) ===== */
-
-select{
+.card-actions{
 width:100%;
-padding:10px;
-border-radius:6px;
-border:1px solid #ddd;
-font-size:14px;
-background:white;
-appearance:none;
-cursor:pointer;
-transition:0.2s;
+justify-content:flex-end;
 }
 
-select:focus{
-outline:none;
-border-color:#111;
 }
 
-/* ===== LOCKED FIELD STYLE ===== */
-
-input[readonly],
-select:disabled{
-background:#f7f7f7;
-color:#777;
-cursor:not-allowed;
-border-color:#e3e3e3;
-}
-
-/* ===== EDIT MODE TRANSITION ===== */
-
-input,
-select{
-transition:all .2s ease;
-}
-
-/* ===== CUSTOM DROPDOWN ARROW ===== */
-
-select{
-background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6 6 6-6' stroke='%23666' stroke-width='2' fill='none'/%3E%3C/svg%3E");
-background-repeat:no-repeat;
-background-position:right 10px center;
-background-size:12px;
-padding-right:30px;
-}
-
-select:hover:not(:disabled){
-border-color:#111;
-}
-
-.profile-avatar img{
-width:110px;
-height:110px;
-border-radius:50%;
-object-fit:cover;
-border:3px solid #eee;
-transition:0.3s;
-}
-
-.profile-avatar img:hover{
-transform:scale(1.05);
-}
-
-/* ================= MOBILE ================= */
+/* =====================================
+MOBILE
+===================================== */
 
 @media (max-width:600px){
 
 .profile-container{
-margin:30px auto;
-gap:25px;
+margin:25px auto;
 padding:0 15px;
 }
-
-/* PROFILE HEADER */
 
 .profile-hero{
 flex-direction:column;
 align-items:center;
 text-align:center;
-padding:20px;
 gap:15px;
 }
 
 .profile-avatar img{
-width:80px;
-height:80px;
+width:75px;
+height:75px;
 }
 
 .profile-info h2{
@@ -522,15 +427,7 @@ font-size:20px;
 .profile-meta{
 flex-direction:column;
 gap:5px;
-align-items:center;
 font-size:13px;
-}
-
-/* FORM */
-
-.form-grid{
-grid-template-columns:1fr;
-gap:14px;
 }
 
 input,
@@ -539,91 +436,175 @@ padding:12px;
 font-size:15px;
 }
 
-/* ADDRESS + MOBILE CARDS */
-
-.address-card,
-.mobile-card{
-flex-direction:column;
-align-items:flex-start;
-gap:12px;
-padding:16px;
-}
-
-.card-actions{
-width:100%;
-justify-content:flex-end;
-}
-
-/* BUTTONS */
-
 .btn-primary,
 .btn-secondary,
 .save-btn{
 width:100%;
-padding:12px;
 }
-
-/* MODAL */
 
 .modal-box{
 width:90%;
-max-width:320px;
 }
 
 }
 
-/* ================= TABLET ================= */
+/* =====================================
+SMALL MOBILE
+===================================== */
 
-@media (max-width:900px){
+@media (max-width:400px){
 
-.profile-container{
-margin:40px auto;
-gap:28px;
+.profile-avatar img{
+width:65px;
+height:65px;
 }
 
-/* HEADER */
-
-.profile-hero{
-gap:20px;
+.profile-info h2{
+font-size:18px;
 }
 
-/* FORM */
-
-.form-grid{
-grid-template-columns:1fr 1fr;
-gap:16px;
+.profile-meta{
+font-size:12px;
 }
 
-/* ADDRESS */
-
-.address-card,
-.mobile-card{
-padding:16px 18px;
-}
-
-.modal-box{
-width:360px;
+.dashboard-card{
+padding:18px;
 }
 
 }
 
-@media (max-width:1100px){
-
-.profile-container{
-max-width:850px;
-}
-
-}
-
-button{
-min-height:38px;
-}
+/* ===============================
+PERFECT MOBILE FIX
+=============================== */
 
 @media (max-width:600px){
 
+/* container */
+
+.profile-container{
+max-width:100%;
+margin:20px auto;
+padding:0 14px;
+gap:20px;
+}
+
+/* hero */
+
+.profile-hero{
+flex-direction:column;
+align-items:center;
+text-align:center;
+padding:18px;
+gap:12px;
+margin-top: 45px;
+}
+
+/* avatar */
+
 .profile-avatar img{
-width:75px;
-height:75px;
+width:110px;
+height:110px;
+}
+
+/* upload button */
+
+.upload-btn{
+padding:7px 16px;
+font-size:13px;
+}
+
+/* name */
+
+.profile-info h2{
+font-size:19px;
+margin-top:6px;
+}
+
+/* meta */
+
+.profile-meta{
+flex-direction:column;
+gap:3px;
+font-size:13px;
+}
+
+/* cards */
+
+.dashboard-card{
+padding:18px;
+border-radius:12px;
+}
+
+/* headers */
+
+.card-header{
+flex-direction:column;
+align-items:flex-start;
+gap:10px;
+}
+
+/* buttons */
+
+.btn-primary,
+.btn-secondary{
+width:100%;
+padding:10px;
+font-size:14px;
+}
+
+/* form */
+
+.form-grid{
+grid-template-columns:1fr;
+gap:14px;
+}
+
+/* inputs */
+
+input,
+select{
+padding:11px;
+font-size:14px;
+}
+
+/* address & mobile cards */
+
+.address-card,
+.mobile-card{
+flex-direction:row;
+align-items:center;
+justify-content:space-between;
+padding:16px;
+}
+
+/* info block */
+
+.address-info,
+.mobile-info{
+max-width:75%;
+}
+
+/* actions */
+
+.card-actions{
+display:flex;
+align-items:center;
+justify-content:flex-end;
+}
+
+/* delete button */
+
+.delete-btn{
+padding:8px 10px;
+border-radius:8px;
+}
+
+/* modal */
+
+.modal-box{
+width:92%;
+max-width:320px;
+padding:20px;
 }
 
 }

@@ -9,7 +9,8 @@
 
 <title>My Orders | Subio Foods</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/header_footer.css' %}">
 
 <style>
 
@@ -21,27 +22,41 @@ font-family:'Poppins',sans-serif;
 }
 
 body{
-background:#f5f7f9;
-padding:40px 6%;
+background:linear-gradient(135deg,#f5f7fa,#e4ecf3);
+}
+
+/* CONTAINER */
+
+.orders-container{
+padding:120px 7% 70px;
+max-width:1200px;
+margin:auto;
 }
 
 /* PAGE TITLE */
 
 .page-title{
-font-size:32px;
-font-weight:600;
-margin-bottom:30px;
-color:#222;
+font-size:34px;
+font-weight:700;
+margin-bottom:35px;
+color:#1b1b1b;
 }
 
 /* ORDER CARD */
 
 .order-card{
 background:white;
-border-radius:12px;
-padding:25px;
-margin-bottom:25px;
-box-shadow:0 6px 18px rgba(0,0,0,0.05);
+border-radius:16px;
+padding:30px;
+margin-bottom:30px;
+box-shadow:0 10px 30px rgba(0,0,0,0.08);
+transition:0.3s;
+border:1px solid #f0f0f0;
+}
+
+.order-card:hover{
+transform:translateY(-4px);
+box-shadow:0 15px 40px rgba(0,0,0,0.12);
 }
 
 /* HEADER */
@@ -49,67 +64,83 @@ box-shadow:0 6px 18px rgba(0,0,0,0.05);
 .order-header{
 display:flex;
 justify-content:space-between;
+align-items:flex-start;
 flex-wrap:wrap;
-margin-bottom:15px;
-}
-
-.order-header div{
-margin-bottom:8px;
+margin-bottom:18px;
+gap:10px;
 }
 
 .order-id{
 font-weight:600;
+font-size:17px;
 color:#2e7d32;
+}
+
+.order-date{
+font-size:14px;
+color:#777;
+margin-top:3px;
+}
+
+/* PAYMENT */
+
+.payment-info{
+text-align:right;
+}
+
+.payment-method{
+font-size:14px;
+color:#444;
 }
 
 /* STATUS */
 
 .status{
-padding:4px 10px;
-border-radius:6px;
+display:inline-block;
+margin-top:5px;
+padding:5px 12px;
+border-radius:20px;
 font-size:12px;
-font-weight:500;
+font-weight:600;
 text-transform:capitalize;
 }
 
-.status.pending{
-background:#fff3cd;
-color:#856404;
+.status.pending{background:#fff3cd;color:#856404;}
+.status.processing{background:#e2e3ff;color:#383d8b;}
+.status.shipped{background:#cce5ff;color:#004085;}
+.status.delivered{background:#d4edda;color:#155724;}
+.status.cancelled{background:#f8d7da;color:#721c24;}
+
+/* ADDRESS */
+
+.address{
+margin:12px 0;
+font-size:15px;
+color:#444;
 }
 
-.status.processing{
-background:#e2e3ff;
-color:#383d8b;
-}
-
-.status.shipped{
-background:#cce5ff;
-color:#004085;
-}
-
-.status.delivered{
-background:#d4edda;
-color:#155724;
-}
-
-.status.cancelled{
-background:#f8d7da;
-color:#721c24;
-}
-
-/* PRODUCTS */
+/* PRODUCT LIST */
 
 .products{
 border-top:1px solid #eee;
-margin-top:15px;
-padding-top:15px;
+margin-top:18px;
+padding-top:18px;
 }
+
+/* PRODUCT ROW */
 
 .product-row{
 display:flex;
 align-items:center;
 justify-content:space-between;
-margin-bottom:12px;
+margin-bottom:15px;
+padding:10px;
+border-radius:10px;
+transition:0.2s;
+}
+
+.product-row:hover{
+background:#fafafa;
 }
 
 /* LEFT SIDE */
@@ -117,54 +148,90 @@ margin-bottom:12px;
 .product-left{
 display:flex;
 align-items:center;
-gap:12px;
+gap:15px;
 }
 
 .product-left img{
-width:55px;
-height:55px;
-border-radius:6px;
+width:60px;
+height:60px;
+border-radius:10px;
 object-fit:cover;
 border:1px solid #eee;
+}
+
+.product-name{
+font-weight:500;
+}
+
+.qty{
+font-size:13px;
+color:#777;
+}
+
+/* PRICE */
+
+.product-price{
+font-weight:600;
+}
+
+/* ORDER FOOTER */
+
+.order-bottom{
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-top:1px solid #eee;
+margin-top:15px;
+padding-top:18px;
+flex-wrap:wrap;
+gap:10px;
 }
 
 /* TOTAL */
 
 .order-total{
-margin-top:15px;
-border-top:1px solid #eee;
-padding-top:12px;
-display:flex;
-justify-content:space-between;
-font-weight:600;
-font-size:16px;
+font-size:18px;
+font-weight:700;
+}
+
+/* VIEW DETAILS BUTTON */
+
+.details-btn{
+background:linear-gradient(135deg,#2e7d32,#43a047);
+color:white;
+padding:10px 22px;
+border-radius:8px;
+text-decoration:none;
+font-size:14px;
+font-weight:500;
+transition:0.3s;
+}
+
+.details-btn:hover{
+transform:translateY(-2px);
+box-shadow:0 6px 18px rgba(0,0,0,0.15);
 }
 
 /* EMPTY STATE */
 
 .empty-orders{
 text-align:center;
-margin-top:120px;
+margin-top:150px;
 }
 
 .empty-orders h2{
+font-size:28px;
 margin-bottom:10px;
-font-size:26px;
-}
-
-.empty-orders p{
-color:#666;
-margin-bottom:20px;
 }
 
 .shop-btn{
 display:inline-block;
-padding:12px 20px;
+padding:12px 22px;
 background:#2e7d32;
 color:white;
 border-radius:8px;
 text-decoration:none;
-font-size:14px;
+margin-top:15px;
 transition:0.3s;
 }
 
@@ -180,15 +247,23 @@ background:#1b5e20;
 flex-direction:column;
 }
 
+.payment-info{
+text-align:left;
+}
+
 .product-row{
 flex-direction:column;
 align-items:flex-start;
 gap:10px;
 }
 
-.order-total{
+.product-price{
+align-self:flex-end;
+}
+
+.order-bottom{
 flex-direction:column;
-gap:5px;
+align-items:flex-start;
 }
 
 }
@@ -198,6 +273,10 @@ gap:5px;
 </head>
 
 <body>
+
+{% include "header.html" %}
+
+<div class="orders-container">
 
 <h1 class="page-title">My Orders</h1>
 
@@ -210,28 +289,20 @@ gap:5px;
 <div class="order-header">
 
 <div>
-
-<p class="order-id">Order ID: {{order.order_id}}</p>
-
-<p>Date: {{order.created_at|date:"d M Y, h:i A"}}</p>
-
+<div class="order-id">Order ID: {{order.order_id}}</div>
+<div class="order-date">{{order.created_at|date:"d M Y, h:i A"}}</div>
 </div>
 
-<div>
-
-<p>Payment: {{order.payment_method|title}}</p>
-
-<span class="status {{order.status}}">
-{{order.status}}
-</span>
-
+<div class="payment-info">
+<div class="payment-method">Payment: {{order.payment_method|title}}</div>
+<span class="status {{order.status}}">{{order.status}}</span>
 </div>
 
 </div>
 
-
-<p><strong>Delivery Address:</strong> {{order.address}}</p>
-
+<div class="address">
+<strong>Delivery Address:</strong> {{order.address}}
+</div>
 
 <div class="products">
 
@@ -248,15 +319,13 @@ gap:5px;
 {% endif %}
 
 <div>
-
-<p>{{item.product.name}}</p>
-<small>Qty: {{item.quantity}}</small>
-
+<div class="product-name">{{item.product.name}}</div>
+<div class="qty">Qty: {{item.quantity}}</div>
 </div>
 
 </div>
 
-<p>₹{{item.price}}</p>
+<div class="product-price">₹{{item.price}}</div>
 
 </div>
 
@@ -264,11 +333,15 @@ gap:5px;
 
 </div>
 
+<div class="order-bottom">
 
 <div class="order-total">
+Total: ₹{{order.total}}
+</div>
 
-<span>Total</span>
-<span>₹{{order.total}}</span>
+<a href="{% url 'order_detail' order.order_id %}" class="details-btn">
+View Details
+</a>
 
 </div>
 
@@ -281,7 +354,6 @@ gap:5px;
 <div class="empty-orders">
 
 <h2>No Orders Yet</h2>
-
 <p>Looks like you haven't placed any order.</p>
 
 <a href="/products/" class="shop-btn">Start Shopping</a>
@@ -289,6 +361,10 @@ gap:5px;
 </div>
 
 {% endif %}
+
+</div>
+
+{% include "footer.html" %}
 
 </body>
 </html>

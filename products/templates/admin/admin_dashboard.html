@@ -2,10 +2,208 @@
 <!DOCTYPE html>
 <html>
 <head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
 <title>Subio Admin</title>
 
-<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+/* GLOBAL */
+
+body{
+margin:0;
+font-family:Inter;
+background:#f6f8fb;
+color:#1e293b;
+}
+
+/* LAYOUT */
+
+.layout{
+display:flex;
+min-height:100vh;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+width:250px;
+background:#0f172a;
+color:white;
+padding:30px 20px;
+}
+
+.brand{
+font-size:22px;
+font-weight:700;
+margin-bottom:40px;
+}
+
+.sidebar a{
+display:flex;
+gap:10px;
+align-items:center;
+padding:12px;
+color:#cbd5e1;
+text-decoration:none;
+border-radius:8px;
+margin-bottom:8px;
+font-size:14px;
+}
+
+.sidebar a.active{
+background:#2563eb;
+color:white;
+}
+
+.sidebar a:hover{
+background:#1e293b;
+}
+
+/* MAIN */
+
+.main{
+flex:1;
+padding:30px 40px;
+}
+
+/* TOPBAR */
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:30px;
+}
+
+.search{
+background:white;
+border:1px solid #e2e8f0;
+padding:8px 12px;
+border-radius:6px;
+display:flex;
+gap:8px;
+}
+
+.search input{
+border:none;
+outline:none;
+font-size:14px;
+}
+
+/* KPI */
+
+.kpi-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:20px;
+margin-bottom:30px;
+}
+
+.kpi{
+background:white;
+padding:22px;
+border-radius:12px;
+border:1px solid #e2e8f0;
+}
+
+.kpi span{
+font-size:13px;
+color:#64748b;
+}
+
+.kpi h2{
+margin-top:8px;
+font-size:26px;
+}
+
+/* ANALYTICS */
+
+.analytics{
+display:grid;
+grid-template-columns:2fr 1fr;
+gap:20px;
+margin-bottom:30px;
+}
+
+.panel{
+background:white;
+padding:22px;
+border-radius:12px;
+border:1px solid #e2e8f0;
+}
+
+/* ORDERS */
+
+.orders table{
+width:100%;
+border-collapse:collapse;
+}
+
+.orders th{
+text-align:left;
+font-size:13px;
+color:#64748b;
+padding:12px;
+border-bottom:1px solid #e2e8f0;
+}
+
+.orders td{
+padding:14px 12px;
+border-bottom:1px solid #f1f5f9;
+}
+
+.status{
+padding:4px 10px;
+border-radius:6px;
+font-size:12px;
+}
+
+.pending{background:#fef3c7}
+.processing{background:#dbeafe}
+.shipped{background:#bfdbfe}
+.delivered{background:#dcfce7}
+
+/* ACTIVITY */
+
+.feed{
+max-height:300px;
+overflow:auto;
+}
+
+.feed-item{
+padding:10px 0;
+border-bottom:1px solid #f1f5f9;
+font-size:14px;
+}
+
+/* MOBILE */
+
+@media(max-width:900px){
+
+.sidebar{
+display:none;
+}
+
+.analytics{
+grid-template-columns:1fr;
+}
+
+.main{
+padding:20px;
+}
+
+}
+
+</style>
 
 </head>
 
@@ -14,111 +212,172 @@
 <div class="layout">
 
 <!-- SIDEBAR -->
-<aside class="sidebar">
+
+<div class="sidebar">
 
 <div class="brand">SUBIO</div>
 
-<nav>
-<a href="{% url 'admin_dashboard' %}" class="active">Dashboard</a>
-<a href="{% url 'products_admin' %}">Products</a>
-<a>Orders</a>
-<a>Revenue</a>
-<a>Analytics</a>
-<a>Settings</a>
-</nav>
+<a class="active"><i class="fa fa-chart-line"></i> Dashboard</a>
+<a href="{% url 'products_admin' %}"><i class="fa fa-box"></i> Products</a>
+<a href="{% url 'admin_orders' %}"><i class="fa fa-shopping-cart"></i> Orders</a>
+<a><i class="fa fa-users"></i> Customers</a>
+<a><i class="fa fa-chart-pie"></i> Analytics</a>
 
-</aside>
+</div>
+
 
 <!-- MAIN -->
-<main>
 
-<header class="topbar">
-<h1>Dashboard Analytics</h1>
+<div class="main">
 
-<div class="profile">
-Admin
+<div class="topbar">
+
+<h2>Dashboard</h2>
+
+<div class="search">
+<i class="fa fa-search"></i>
+<input placeholder="Search orders">
 </div>
-</header>
 
-<!-- KPI ROW -->
+</div>
 
-<section class="kpis">
+
+<!-- KPI -->
+
+<div class="kpi-grid">
 
 <div class="kpi">
-<span>Total Users</span>
-<h2>{{ total_users }}</h2>
+<span>Total Revenue</span>
+<h2 id="revenue">₹0</h2>
 </div>
 
-<div class="kpi gold">
-<span>Total Products</span>
-<h2>{{ total_products }}</h2>
+<div class="kpi">
+<span>Orders Today</span>
+<h2 id="ordersToday">0</h2>
 </div>
 
-<div class="kpi green">
+<div class="kpi">
+<span>Customers</span>
+<h2 id="customers">0</h2>
+</div>
+
+<div class="kpi">
 <span>Subscribers</span>
 <h2>{{ total_subscribers }}</h2>
 </div>
 
-</section>
+</div>
 
-<!-- GRAPH + STATS -->
 
-<section class="grid">
+<!-- ANALYTICS -->
+
+<div class="analytics">
 
 <div class="panel">
 <h3>Revenue Trend</h3>
-<canvas id="salesChart"></canvas>
+<canvas id="revenueChart"></canvas>
 </div>
 
-<div class="panel stats">
-
-<h3>Quick Stats</h3>
-
-<p>Daily Orders: 12</p>
-<p>Weekly Orders: 84</p>
-<p>Monthly Orders: 310</p>
+<div class="panel">
+<h3>Top Products</h3>
+<canvas id="productChart"></canvas>
+</div>
 
 </div>
 
-</section>
 
 <!-- ORDERS -->
 
-<section class="panel table">
+<div class="panel orders">
 
 <h3>Recent Orders</h3>
 
 <table>
+
+<thead>
 <tr>
 <th>ID</th>
 <th>Customer</th>
 <th>Amount</th>
 <th>Status</th>
 </tr>
+</thead>
 
-<tr>
-<td>#101</td>
-<td>Ravi</td>
-<td>₹450</td>
-<td class="success">Delivered</td>
-</tr>
-
-<tr>
-<td>#102</td>
-<td>Manoj</td>
-<td>₹890</td>
-<td class="pending">Pending</td>
-</tr>
+<tbody id="ordersTable"></tbody>
 
 </table>
 
-</section>
+</div>
 
-</main>
+
+<!-- ACTIVITY -->
+
+<div class="panel">
+
+<h3>Activity</h3>
+
+<div class="feed" id="activityFeed"></div>
 
 </div>
 
-<script src="{% static 'js/dashboard.js' %}"></script>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* CHARTS */
+
+const revenueChart = new Chart(
+document.getElementById("revenueChart"),
+{
+type:"line",
+data:{labels:[],datasets:[{data:[],borderColor:"#2563eb"}]},
+options:{plugins:{legend:{display:false}}}
+})
+
+const productChart = new Chart(
+document.getElementById("productChart"),
+{
+type:"bar",
+data:{labels:[],datasets:[{data:[],backgroundColor:"#10b981"}]},
+options:{plugins:{legend:{display:false}}}
+})
+
+/* DASHBOARD API */
+
+async function loadDashboard(){
+
+const res = await fetch("/dashboard/api/stats/")
+const data = await res.json()
+
+document.getElementById("revenue").innerText="₹"+data.total_revenue
+document.getElementById("ordersToday").innerText=data.daily_orders
+document.getElementById("customers").innerText=data.customers
+
+let rows=""
+
+data.recent_orders.forEach(order=>{
+rows+=`
+<tr>
+<td>#${order.order_id}</td>
+<td>${order.user__username}</td>
+<td>₹${order.total}</td>
+<td><span class="status ${order.status}">${order.status}</span></td>
+</tr>
+`
+})
+
+document.getElementById("ordersTable").innerHTML=rows
+
+}
+
+loadDashboard()
+setInterval(loadDashboard,5000)
+
+</script>
 
 </body>
 </html>

@@ -175,7 +175,8 @@ const minus = form.querySelector(".minus");
 const id = form.querySelector("input[name='product_id']").value;
 
 const name = document.querySelector(`[data-product-name="${id}"]`)?.innerText;
-const price = parseFloat(document.querySelector(`[data-product-price="${id}"]`)?.innerText);
+const priceText = document.querySelector(`[data-product-price="${id}"]`)?.innerText || "0";
+const price = parseFloat(priceText.replace("₹","").trim());
 const image = document.querySelector(`[data-product-image="${id}"]`)?.src;
 
 

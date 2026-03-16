@@ -158,6 +158,9 @@ def send_custom_email(request, subscriber, subject, message):
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from .models import Product, NewsletterSubscriber
+from django.utils import timezone
+from datetime import timedelta
+from .models import Order
 
 @staff_member_required
 def admin_dashboard(request):
@@ -166,10 +169,28 @@ def admin_dashboard(request):
     total_products = Product.objects.count()
     total_subscribers = NewsletterSubscriber.objects.count()
 
+    today = timezone.now().date()
+
+    daily_orders = Order.objects.filter(created_at__date=today).count()
+
+    weekly_orders = Order.objects.filter(
+        created_at__gte=today - timedelta(days=7)
+    ).count()
+
+    monthly_orders = Order.objects.filter(
+        created_at__gte=today - timedelta(days=30)
+    ).count()
+
+    recent_orders = Order.objects.select_related("user").order_by("-created_at")[:5]
+
     context = {
         "total_users": total_users,
         "total_products": total_products,
         "total_subscribers": total_subscribers,
+        "daily_orders": daily_orders,
+        "weekly_orders": weekly_orders,
+        "monthly_orders": monthly_orders,
+        "recent_orders": recent_orders,
     }
 
     return render(request, "admin/admin_dashboard.html", context)
@@ -1244,3 +1265,105 @@ def send_order_email(request, order):
     )
 
     admin_email.send()
+
+@login_required
+def order_detail(request, order_id):
+    order = Order.objects.get(order_id=order_id, user=request.user)
+    return render(request, "order_detail.html", {"order": order})
+
+@login_required
+def cancel_order(request, order_id):
+
+    order = Order.objects.get(order_id=order_id, user=request.user)
+
+    if order.status in ["pending","processing"]:
+        order.status = "cancelled"
+        order.save()
+
+    return redirect("order_detail", order_id=order_id)
+
+def track_order(request, order_id):
+
+    order = Order.objects.get(order_id=order_id)
+
+    return render(request,"track_order.html",{"order":order})
+
+from django.contrib.admin.views.decorators import staff_member_required
+
+@staff_member_required
+def admin_orders(request):
+
+    orders = Order.objects.select_related("user").order_by("-created_at")
+
+    return render(request,"admin/orders_admin.html",{
+        "orders":orders
+    })
+
+@staff_member_required
+def admin_order_detail(request, order_id):
+
+    order = Order.objects.prefetch_related("items__product").get(order_id=order_id)
+
+    if request.method == "POST":
+
+        order.status = request.POST.get("status")
+        order.courier_name = request.POST.get("courier_name")
+        order.tracking_number = request.POST.get("tracking_number")
+
+        order.save()
+
+        return redirect("admin_order_detail",order_id=order_id)
+
+    return render(request,"admin/order_detail_admin.html",{
+        "order":order
+    })
+
+from django.http import JsonResponse
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Sum
+from .models import Order
+
+
+def dashboard_stats(request):
+
+    today = timezone.now().date()
+
+    daily_orders = Order.objects.filter(created_at__date=today).count()
+
+    weekly_orders = Order.objects.filter(
+        created_at__gte=today - timedelta(days=7)
+    ).count()
+
+    monthly_orders = Order.objects.filter(
+        created_at__gte=today - timedelta(days=30)
+    ).count()
+
+    total_revenue = Order.objects.filter(
+        status="delivered"
+    ).aggregate(total=Sum("total"))["total"] or 0
+
+    today_revenue = Order.objects.filter(
+        created_at__date=today,
+        status="delivered"
+    ).aggregate(total=Sum("total"))["total"] or 0
+
+    recent_orders = list(
+        Order.objects.select_related("user")
+        .order_by("-created_at")[:6]
+        .values(
+            "order_id",
+            "user__username",
+            "total",
+            "status",
+        )
+    )
+
+    return JsonResponse({
+        "daily_orders": daily_orders,
+        "weekly_orders": weekly_orders,
+        "monthly_orders": monthly_orders,
+        "total_revenue": total_revenue,
+        "today_revenue": today_revenue,
+        "recent_orders": recent_orders
+    })
