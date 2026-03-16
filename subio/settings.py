@@ -15,9 +15,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-fallback-key")
 
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False") == "True"
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    "subio-3k7w.onrender.com",
+    "subiofoods.com",
+    "www.subiofoods.com",
+]
 
 # ========================
 # Applications
@@ -172,6 +178,8 @@ RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 
 CSRF_TRUSTED_ORIGINS = [
     "https://subio-3k7w.onrender.com",
+    "https://subiofoods.com",
+    "https://www.subiofoods.com",
 ]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
