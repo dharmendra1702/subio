@@ -429,6 +429,40 @@ border:1px solid #ddd;
 border-radius:6px;
 }
 
+/* ================= ORDER PROCESSING ================= */
+
+#orderProcessing{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:white;
+display:none;
+align-items:center;
+justify-content:center;
+z-index:99999;
+}
+
+.processing-box{
+text-align:center;
+}
+
+.processing-spinner{
+width:70px;
+height:70px;
+border:6px solid #e5e7eb;
+border-top:6px solid #16a34a;
+border-radius:50%;
+animation:spin 1s linear infinite;
+margin:auto;
+margin-bottom:20px;
+}
+
+@keyframes spin{
+0%{transform:rotate(0deg)}
+100%{transform:rotate(360deg)}
+}
 </style>
 </head>
 
@@ -906,6 +940,20 @@ Cancel
 
 </div>
 
+<div id="orderProcessing">
+
+  <div class="processing-box">
+
+    <div class="processing-spinner"></div>
+
+    <h2>Processing Your Order</h2>
+
+    <p>Please wait while we confirm your order</p>
+
+  </div>
+
+</div>
+
 {% include "cart_drawer.html" %}
 <script src="{% static 'js/navbar.js' %}"></script>
 <script src="{% static 'js/scroll.js' %}"></script>
@@ -951,17 +999,27 @@ card.querySelector("input").checked=true
 })
 
 /* PAYMENT */
+function showProcessing(){
+document.getElementById("orderProcessing").style.display="flex"
+}
 
 function payNow(){
 
 let payment=document.querySelector('input[name="payment"]:checked').value
 
+/* COD */
+
 if(payment==="cod"){
 
+showProcessing()
+
 document.getElementById("orderForm").submit()
+
 return
 
 }
+
+/* RAZORPAY */
 
 var options = {
 
@@ -979,12 +1037,13 @@ order_id: "{{ razorpay_order_id }}",
 
 handler: function (response) {
 
-    console.log("Razorpay Payment ID:", response.razorpay_payment_id);
+showProcessing()
 
-    document.getElementById("razorpay_payment_id").value =
-        response.razorpay_payment_id;
+document.getElementById("razorpay_payment_id").value =
+response.razorpay_payment_id
 
-    document.getElementById("orderForm").submit();
+document.getElementById("orderForm").submit()
+
 }
 
 }

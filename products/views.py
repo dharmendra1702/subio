@@ -10,6 +10,7 @@ from .models import Category
 from decimal import ROUND_HALF_UP, Decimal
 import os
 from .models import Order, OrderItem, Product, Address
+import threading
 
 def home(request):
     categories = Category.objects.all()
@@ -860,6 +861,13 @@ def checkout(request):
         "razorpay_key": settings.RAZORPAY_KEY_ID
     })
 
+def send_order_email_async(request, order):
+    try:
+        send_order_email(request, order)
+        print("Order email sent successfully")
+    except Exception as e:
+        print("Order email failed:", e)
+
 
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
@@ -967,6 +975,14 @@ def place_order(request):
     OrderItem.objects.bulk_create(order_items)
 
     print("Order placed successfully:", order.order_id)
+
+    # SEND EMAIL IN BACKGROUND
+    threading.Thread(
+        target=send_order_email_async,
+        args=(request, order),
+        daemon=True
+    ).start()
+
     # CLEAR CART
     request.session["cart"] = {}
     request.session["coupon_discount"] = 0
