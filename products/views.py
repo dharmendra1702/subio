@@ -157,7 +157,7 @@ def send_custom_email(request, subscriber, subject, message):
         email.send(fail_silently=False)
         print("Email sent successfully")
     except Exception as e:
-        print("Email failed:", str(e))
+        print("❌ EMAIL ERROR:", repr(e))
 
 # <===============admin_dashboard================>
 from django.contrib.admin.views.decorators import staff_member_required
@@ -999,10 +999,7 @@ def place_order(request):
     print("Order placed successfully:", order.order_id)
 
     # AFTER ORDER CREATED
-    threading.Thread(
-        target=send_order_email_async,
-        args=(order,)
-    ).start()
+    send_order_email(order)
 
 
     # CLEAR CART
@@ -1167,45 +1164,109 @@ from xhtml2pdf import pisa
 
 
 def send_order_email(order):
+
+    items = order.items.all()
+
+    subtotal = sum((i.price * i.quantity for i in items), Decimal("0"))
+    gst = subtotal * Decimal("0.05")
+    shipping = order.shipping_fee or Decimal("0")
+    coupon = order.coupon_discount or Decimal("0")
+    total = subtotal + gst + shipping - coupon
+
+    subtotal = subtotal.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    gst = gst.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    shipping = shipping.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    coupon = coupon.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+    total = total.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+
+    amount_words = num2words(total, lang="en_IN").title() + " Rupees Only"
+
+    # -------- QR CODE --------
+    qr = qrcode.make(f"https://subiofoods.com/order/{order.order_id}")
+    buffer = BytesIO()
+    qr.save(buffer, format="PNG")
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+    logo_file = os.path.join(settings.BASE_DIR, "products/static/images/icons/logo.png")
+    signature_file = os.path.join(settings.BASE_DIR, "products/static/images/signature.png")
+
+    logo_base64 = image_to_base64(logo_file)
+    signature_base64 = image_to_base64(signature_file)
+
+    # -------- GENERATE PDF --------
+
+    template = get_template("invoice.html")
+
+    html = template.render({
+        "order": order,
+        "items": items,
+        "subtotal": subtotal,
+        "gst": gst,
+        "shipping": shipping,
+        "coupon": coupon,
+        "total": total,
+        "amount_words": amount_words,
+        "qr_code": qr_base64,
+        "logo_base64": logo_base64,
+        "signature_base64": signature_base64
+    })
+
+    pdf_buffer = BytesIO()
+    pisa.CreatePDF(html, dest=pdf_buffer)
+
+    pdf_buffer.seek(0)
+
+    # -------- CUSTOMER EMAIL --------
+
+    subject = f"Your Subio Order #{order.order_id} Confirmation"
+
+    message = render_to_string("emails/order_confirmation.html", {
+        "order": order,
+        "total": total
+    })
+
+    email = EmailMessage(
+        subject,
+        message,
+        settings.DEFAULT_FROM_EMAIL,
+        [order.user.email],
+    )
+
+    email.content_subtype = "html"
+
+    email.attach(
+        f"SUBIO_{order.invoice_number}.pdf",
+        pdf_buffer.read(),
+        "application/pdf"
+    )
+
     try:
-        items = order.items.all()
-
-        subtotal = sum((i.price * i.quantity for i in items), Decimal("0"))
-        gst = subtotal * Decimal("0.05")
-        shipping = order.shipping_fee or Decimal("0")
-        coupon = order.coupon_discount or Decimal("0")
-        total = subtotal + gst + shipping - coupon
-
-        subject = f"Your Subio Order #{order.order_id} Confirmation"
-
-        message = render_to_string("emails/order_confirmation.html", {
-            "order": order,
-            "total": total
-        })
-
-        email = EmailMessage(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [order.user.email],
-        )
-
-        email.content_subtype = "html"
-
         email.send(fail_silently=False)
-
-        # ✅ IMPORTANT: MARK SUCCESS
-        order.email_sent = True
-        order.save(update_fields=["email_sent"])
-
-        print("✅ Email sent successfully")
-
+        print("Email sent successfully")
     except Exception as e:
-        print("❌ Email failed:", str(e))
+        print("❌ EMAIL ERROR:", repr(e))
 
-        # ❌ IMPORTANT: MARK FAILURE
-        order.email_sent = False
-        order.save(update_fields=["email_sent"])
+    # -------- ADMIN EMAIL --------
+
+    admin_subject = f"New Order Received #{order.order_id}"
+
+    admin_message = f"""
+    New order received!
+
+    Order ID: {order.order_id}
+    Customer: {order.user.username}
+    Email: {order.user.email}
+    Total: ₹{total}
+    """
+
+    admin_email = EmailMessage(
+        admin_subject,
+        admin_message,
+        settings.DEFAULT_FROM_EMAIL,
+        [settings.EMAIL_HOST_USER],
+    )
+
+    admin_email.send(fail_silently=True)
 
 @login_required
 def order_detail(request, order_id):
@@ -1308,3 +1369,17 @@ def dashboard_stats(request):
         "today_revenue": today_revenue,
         "recent_orders": recent_orders
     })
+
+def test_email(request):
+    from django.core.mail import send_mail
+    try:
+        send_mail(
+            "Test Email",
+            "Working 🚀",
+            settings.DEFAULT_FROM_EMAIL,
+            ["your_email@gmail.com"],
+            fail_silently=False,
+        )
+        return HttpResponse("Success")
+    except Exception as e:
+        print("❌ EMAIL ERROR:", repr(e))

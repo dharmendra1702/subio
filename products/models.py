@@ -241,7 +241,7 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     email_sent = models.BooleanField(default=False)
-
+    
     razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True)
     def save(self, *args, **kwargs):
 
