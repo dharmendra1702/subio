@@ -1299,7 +1299,7 @@ def send_order_email(order):
         # -------- ADMIN EMAIL --------
         admin_email = EmailMessage(
             f"New Order #{order.order_id}",
-            f"Customer: {order.user.username}\nTotal: ₹{total}",
+            f"Order ID: {order.order_id}\n Customer: {order.user.username}\n Email: {order.user.email}\n Total: ₹{total}",
             settings.DEFAULT_FROM_EMAIL,
             [settings.EMAIL_HOST_USER],
         )
