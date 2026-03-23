@@ -886,9 +886,9 @@ def checkout(request):
         "razorpay_key": settings.RAZORPAY_KEY_ID
     })
 
-def send_order_email_async(request, order):
+def send_order_email_async(order):
     try:
-        send_order_email(request, order)
+        send_order_email(order)
         print("Order email sent successfully")
     except Exception as e:
         print("Order email failed:", e)
@@ -1004,7 +1004,7 @@ def place_order(request):
     # AFTER ORDER CREATED
     threading.Thread(
         target=send_order_email_async,
-        args=(request, order)
+        args=(order,)
     ).start()
 
 
@@ -1169,7 +1169,7 @@ from io import BytesIO
 from xhtml2pdf import pisa
 
 
-def send_order_email(request, order):
+def send_order_email(order):
 
     items = order.items.all()
 

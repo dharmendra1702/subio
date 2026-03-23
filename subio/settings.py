@@ -129,7 +129,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # ========================
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "Asia/Kolkata"
 
 USE_I18N = True
 USE_TZ = True
@@ -189,7 +189,7 @@ EMAIL_USE_SSL = False
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = f"Subio Foods <{EMAIL_HOST_USER}>"
 
 EMAIL_TIMEOUT = 30
 # ========================
