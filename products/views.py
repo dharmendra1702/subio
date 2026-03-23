@@ -1005,10 +1005,20 @@ def place_order(request):
     print("Order placed successfully:", order.order_id)
 
     # AFTER ORDER CREATED
-    try:
-        send_order_email(order)
-    except Exception as e:
-        print("Email failed but order placed:", e)
+    def send_email_background(order_id):
+        try:
+            order = Order.objects.get(id=order_id)
+            send_order_email(order)
+        except Exception as e:
+            print("❌ Background email failed:", e)
+
+
+    # CALL THIS
+    threading.Thread(
+        target=send_email_background,
+        args=(order.id,),
+        daemon=True   # 🔥 VERY IMPORTANT
+    ).start()
 
 
     # CLEAR CART
@@ -1251,6 +1261,15 @@ def send_order_email(order):
         logo_base64 = safe_image(logo_file)
         signature_base64 = safe_image(signature_file)
 
+        if len(items) > 15:
+            print("⚠️ Skipping PDF (too many items)")
+            pdf_bytes = None
+        else:
+            pdf_buffer = BytesIO()
+            pisa.CreatePDF(html_pdf, dest=pdf_buffer)
+            pdf_buffer.seek(0)
+            pdf_bytes = pdf_buffer.read()
+
         # -------- GENERATE PDF --------
         template = get_template("invoice.html")
 
@@ -1439,7 +1458,7 @@ def send_email_with_fallback(subject, html_message, to_email, pdf_bytes=None, fi
         if pdf_bytes and filename:
             email.attach(filename, pdf_bytes, "application/pdf")
 
-        email.send(fail_silently=False)
+        email.send(fail_silently=True)
 
         print("✅ Sent via Zoho SMTP")
         return True

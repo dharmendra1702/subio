@@ -190,7 +190,7 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
 DEFAULT_FROM_EMAIL = f"Subio Foods <{EMAIL_HOST_USER}>"
 
-EMAIL_TIMEOUT = 60
+EMAIL_TIMEOUT = 10
 
 # ========================
 # SendGrid Backup
@@ -239,3 +239,17 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
 # ========================
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}
