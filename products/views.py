@@ -152,7 +152,11 @@ def send_custom_email(request, subscriber, subject, message):
     )
 
     email.attach_alternative(html, "text/html")
-    email.send()
+    try:
+        email.send(fail_silently=False)
+        print("Email sent successfully")
+    except Exception as e:
+        print("Email failed:", str(e))
 
 # <===============admin_dashboard================>
 from django.contrib.admin.views.decorators import staff_member_required
@@ -997,12 +1001,12 @@ def place_order(request):
 
     print("Order placed successfully:", order.order_id)
 
-    # SEND EMAIL IN BACKGROUND
+    # AFTER ORDER CREATED
     threading.Thread(
         target=send_order_email_async,
-        args=(request, order),
-        daemon=True
+        args=(request, order)
     ).start()
+
 
     # CLEAR CART
     request.session["cart"] = {}
@@ -1242,7 +1246,11 @@ def send_order_email(request, order):
         "application/pdf"
     )
 
-    email.send()
+    try:
+        email.send(fail_silently=False)
+        print("Email sent successfully")
+    except Exception as e:
+        print("Email failed:", str(e))
 
     # -------- ADMIN EMAIL --------
 
@@ -1264,7 +1272,7 @@ def send_order_email(request, order):
         [settings.EMAIL_HOST_USER],
     )
 
-    admin_email.send()
+    admin_email.send(fail_silently=True)
 
 @login_required
 def order_detail(request, order_id):
