@@ -153,9 +153,15 @@ def send_custom_email(request, subscriber, subject, message):
     )
 
     email.attach_alternative(html, "text/html")
+
     try:
-        email.send(fail_silently=False)
-        print("Email sent successfully")
+        success = send_email_with_fallback(
+            subject,
+            html,
+            subscriber.email   # ✅ FIXED
+        )
+        print("✅ Newsletter email sent")
+
     except Exception as e:
         print("❌ EMAIL ERROR:", repr(e))
 
@@ -999,7 +1005,10 @@ def place_order(request):
     print("Order placed successfully:", order.order_id)
 
     # AFTER ORDER CREATED
-    send_order_email(order)
+    try:
+        send_order_email(order)
+    except Exception as e:
+        print("Email failed but order placed:", e)
 
 
     # CLEAR CART
@@ -1084,8 +1093,12 @@ import os
 
 
 def image_to_base64(path):
-    with open(path, "rb") as img:
-        return base64.b64encode(img.read()).decode()
+    try:
+        with open(path, "rb") as img:
+            return base64.b64encode(img.read()).decode()
+    except Exception as e:
+        print("❌ Image load failed:", e)
+        return ""
 
 
 @login_required
@@ -1112,7 +1125,18 @@ def download_invoice(request, order_id):
     coupon = coupon.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
     total = total.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
 
-    amount_words = num2words(total, lang="en_IN").title() + " Rupees Only"
+    rupees = int(total)
+    paise = int(round((total - rupees) * 100))
+
+    if paise > 0:
+        amount_words = (
+            num2words(rupees, lang="en_IN").title()
+            + " Rupees And "
+            + num2words(paise, lang="en_IN").title()
+            + " Paise Only"
+        )
+    else:
+        amount_words = num2words(rupees, lang="en_IN").title() + " Rupees Only"
 
     # -------- QR CODE --------
 
@@ -1157,116 +1181,139 @@ def download_invoice(request, order_id):
 
     return response
 
+
+def safe_image(path):
+    try:
+        with open(path, "rb") as img:
+            return base64.b64encode(img.read()).decode()
+    except Exception as e:
+        print("❌ Image load failed:", e)
+        return ""
+
+logo_file = os.path.join(settings.BASE_DIR, "products/static/images/icons/logo.png")
+signature_file = os.path.join(settings.BASE_DIR, "products/static/images/signature.png")
+
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from io import BytesIO
 from xhtml2pdf import pisa
 
-
 def send_order_email(order):
-
-    items = order.items.all()
-
-    subtotal = sum((i.price * i.quantity for i in items), Decimal("0"))
-    gst = subtotal * Decimal("0.05")
-    shipping = order.shipping_fee or Decimal("0")
-    coupon = order.coupon_discount or Decimal("0")
-    total = subtotal + gst + shipping - coupon
-
-    subtotal = subtotal.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
-    gst = gst.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
-    shipping = shipping.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
-    coupon = coupon.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
-    total = total.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
-
-    amount_words = num2words(total, lang="en_IN").title() + " Rupees Only"
-
-    # -------- QR CODE --------
-    qr = qrcode.make(f"https://subiofoods.com/order/{order.order_id}")
-    buffer = BytesIO()
-    qr.save(buffer, format="PNG")
-    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
-
-    logo_file = os.path.join(settings.BASE_DIR, "products/static/images/icons/logo.png")
-    signature_file = os.path.join(settings.BASE_DIR, "products/static/images/signature.png")
-
-    logo_base64 = image_to_base64(logo_file)
-    signature_base64 = image_to_base64(signature_file)
-
-    # -------- GENERATE PDF --------
-
-    template = get_template("invoice.html")
-
-    html = template.render({
-        "order": order,
-        "items": items,
-        "subtotal": subtotal,
-        "gst": gst,
-        "shipping": shipping,
-        "coupon": coupon,
-        "total": total,
-        "amount_words": amount_words,
-        "qr_code": qr_base64,
-        "logo_base64": logo_base64,
-        "signature_base64": signature_base64
-    })
-
-    pdf_buffer = BytesIO()
-    pisa.CreatePDF(html, dest=pdf_buffer)
-
-    pdf_buffer.seek(0)
-
-    # -------- CUSTOMER EMAIL --------
-
-    subject = f"Your Subio Order #{order.order_id} Confirmation"
-
-    message = render_to_string("emails/order_confirmation.html", {
-        "order": order,
-        "total": total
-    })
-
-    email = EmailMessage(
-        subject,
-        message,
-        settings.DEFAULT_FROM_EMAIL,
-        [order.user.email],
-    )
-
-    email.content_subtype = "html"
-
-    email.attach(
-        f"SUBIO_{order.invoice_number}.pdf",
-        pdf_buffer.read(),
-        "application/pdf"
-    )
-
     try:
-        email.send(fail_silently=False)
-        print("Email sent successfully")
+        print("🚀 Sending email to:", order.user.email)
+
+        items = order.items.all()
+
+        subtotal = sum((i.price * i.quantity for i in items), Decimal("0"))
+        gst = subtotal * Decimal("0.05")
+        shipping = order.shipping_fee or Decimal("0")
+        coupon = order.coupon_discount or Decimal("0")
+        total = subtotal + gst + shipping - coupon
+
+        subtotal = subtotal.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+        gst = gst.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+        shipping = shipping.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+        coupon = coupon.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+        total = total.quantize(Decimal("0.00"), rounding=ROUND_HALF_UP)
+
+        # ✅ AMOUNT IN WORDS
+        rupees = int(total)
+        paise = int(round((total - rupees) * 100))
+
+        if paise > 0:
+            amount_words = (
+                num2words(rupees, lang="en_IN").title()
+                + " Rupees And "
+                + num2words(paise, lang="en_IN").title()
+                + " Paise Only"
+            )
+        else:
+            amount_words = num2words(rupees, lang="en_IN").title() + " Rupees Only"
+
+        # -------- QR CODE --------
+        qr = qrcode.make(f"https://subiofoods.com/order/{order.order_id}")
+        buffer = BytesIO()
+        qr.save(buffer, format="PNG")
+        qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+        # -------- IMAGES --------
+        def safe_image(path):
+            try:
+                with open(path, "rb") as img:
+                    return base64.b64encode(img.read()).decode()
+            except Exception as e:
+                print("❌ Image load failed:", e)
+                return ""
+
+        logo_file = os.path.join(settings.BASE_DIR, "products/static/images/icons/logo.png")
+        signature_file = os.path.join(settings.BASE_DIR, "products/static/images/signature.png")
+
+        logo_base64 = safe_image(logo_file)
+        signature_base64 = safe_image(signature_file)
+
+        # -------- GENERATE PDF --------
+        template = get_template("invoice.html")
+
+        html_pdf = template.render({
+            "order": order,
+            "items": items,
+            "subtotal": subtotal,
+            "gst": gst,
+            "shipping": shipping,
+            "coupon": coupon,
+            "total": total,
+            "amount_words": amount_words,   # ✅ FIX
+            "qr_code": qr_base64,           # ✅ FIX
+            "logo_base64": logo_base64,     # ✅ FIX
+            "signature_base64": signature_base64  # ✅ FIX
+        })
+
+        pdf_buffer = BytesIO()
+        pisa.CreatePDF(html_pdf, dest=pdf_buffer)
+        pdf_buffer.seek(0)
+
+        pdf_bytes = pdf_buffer.read()
+
+        # -------- EMAIL HTML --------
+        html_message = render_to_string("emails/order_confirmation.html", {
+            "order": order,
+            "total": total
+        })
+
+        subject = f"Your Subio Order #{order.order_id} Confirmation"
+
+        # -------- SEND EMAIL --------
+        success = send_email_with_fallback(
+            subject,
+            html_message,
+            order.user.email,
+            pdf_bytes=pdf_bytes,
+            filename=f"SUBIO_{order.invoice_number}.pdf"
+        )
+
+        if success:
+            print("✅ Customer email sent")
+        else:
+            print("❌ Email sending failed completely")
+
+        # -------- ADMIN EMAIL --------
+        admin_email = EmailMessage(
+            f"New Order #{order.order_id}",
+            f"Customer: {order.user.username}\nTotal: ₹{total}",
+            settings.DEFAULT_FROM_EMAIL,
+            [settings.EMAIL_HOST_USER],
+        )
+        admin_email.send(fail_silently=True)
+
+        print("✅ Admin email sent")
+
+        order.email_sent = success
+        order.save(update_fields=["email_sent"])
+
     except Exception as e:
         print("❌ EMAIL ERROR:", repr(e))
-
-    # -------- ADMIN EMAIL --------
-
-    admin_subject = f"New Order Received #{order.order_id}"
-
-    admin_message = f"""
-    New order received!
-
-    Order ID: {order.order_id}
-    Customer: {order.user.username}
-    Email: {order.user.email}
-    Total: ₹{total}
-    """
-
-    admin_email = EmailMessage(
-        admin_subject,
-        admin_message,
-        settings.DEFAULT_FROM_EMAIL,
-        [settings.EMAIL_HOST_USER],
-    )
-
-    admin_email.send(fail_silently=True)
+        order.email_sent = False
+        order.save(update_fields=["email_sent"])
 
 @login_required
 def order_detail(request, order_id):
@@ -1370,16 +1417,69 @@ def dashboard_stats(request):
         "recent_orders": recent_orders
     })
 
-def test_email(request):
-    from django.core.mail import send_mail
+from django.core.mail import EmailMessage
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+
+
+def send_email_with_fallback(subject, html_message, to_email, pdf_bytes=None, filename=None):
+
+    # -------- TRY ZOHO --------
     try:
-        send_mail(
-            "Test Email",
-            "Working 🚀",
+        email = EmailMessage(
+            subject,
+            html_message,
             settings.DEFAULT_FROM_EMAIL,
-            ["your_email@gmail.com"],
-            fail_silently=False,
+            [to_email],
         )
-        return HttpResponse("Success")
+
+        email.content_subtype = "html"   # ✅ FIX HTML
+
+        # Attach PDF if exists
+        if pdf_bytes and filename:
+            email.attach(filename, pdf_bytes, "application/pdf")
+
+        email.send(fail_silently=False)
+
+        print("✅ Sent via Zoho SMTP")
+        return True
+
     except Exception as e:
-        print("❌ EMAIL ERROR:", repr(e))
+        print("❌ Zoho failed:", e)
+
+    # -------- FALLBACK SENDGRID --------
+    try:
+        sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
+
+        mail = Mail(
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to_emails=to_email,
+            subject=subject,
+            html_content=html_message,
+        )
+
+        # Attach PDF in SendGrid
+        if pdf_bytes and filename:
+            import base64
+            from sendgrid.helpers.mail import Attachment, FileContent, FileName, FileType, Disposition
+
+            encoded = base64.b64encode(pdf_bytes).decode()
+
+            attachment = Attachment(
+                FileContent(encoded),
+                FileName(filename),
+                FileType("application/pdf"),
+                Disposition("attachment")
+            )
+
+            mail.attachment = attachment
+
+        sg.send(mail)
+
+        print("✅ Sent via SendGrid")
+        return True
+
+    except Exception as e:
+        print("❌ SendGrid failed:", e)
+
+    return False

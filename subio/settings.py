@@ -176,12 +176,12 @@ LOGIN_URL = "/login/"
 
 
 # ========================
-# Email
+# Email (Zoho Primary)
 # ========================
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
-EMAIL_HOST = "smtp.gmail.com"
+EMAIL_HOST = "smtp.zoho.in"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
@@ -191,6 +191,12 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = f"Subio Foods <{EMAIL_HOST_USER}>"
 
 EMAIL_TIMEOUT = 60
+
+# ========================
+# SendGrid Backup
+# ========================
+
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 # ========================
 # Razorpay
 # ========================
