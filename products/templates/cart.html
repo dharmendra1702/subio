@@ -161,9 +161,9 @@
 </span>
 </p>
 
-<a href="{% url 'remove_from_cart' key %}" class="remove-btn">
+<button onclick="removeItem('{{key}}')" class="remove-btn">
 Remove
-</a>
+</button>
 
 </div>
 </div>
@@ -263,7 +263,7 @@ Checkout
 
 <h4>{{p.name}}</h4>
 
-<p>₹{{p.price}}</p>
+<p>₹{{p.variants.first.price}}</p>
 
 <button onclick="addSuggested('{{p.id}}')">
 Add to Cart
@@ -396,199 +396,187 @@ Add to Cart
 
 <script src="{% static 'js/navbar.js' %}"></script>
 <script src="{% static 'js/scroll.js' %}"></script>
-<script src="{% static 'js/shop.js' %}"></script>
 <script src="{% static 'js/cart.js' %}"></script>
+<script src="{% static 'js/shop.js' %}"></script>
 <script>
-
 const CartManager = {
 
-GST_RATE:0.05,
-FREE_DELIVERY_LIMIT:399,
-DELIVERY_CHARGE:40,
+GST_RATE: 0.05,
+FREE_DELIVERY_LIMIT: 399,
+DELIVERY_CHARGE: 40,
 
 init(){
-
-this.cacheDom()
-this.recalculate()
-
+    this.cacheDom()
+    this.recalculate()
 },
 
 cacheDom(){
-
-this.subtotalEl=document.getElementById("subtotal")
-this.gstEl=document.getElementById("gst")
-this.shippingEl=document.getElementById("shipping")
-this.totalEl=document.getElementById("finalTotal")
-this.mobileTotal=document.getElementById("mobileTotal")
-this.freeText=document.getElementById("freeDeliveryText")
-
+    this.subtotalEl = document.getElementById("subtotal")
+    this.gstEl = document.getElementById("gst")
+    this.shippingEl = document.getElementById("shipping")
+    this.totalEl = document.getElementById("finalTotal")
+    this.mobileTotal = document.getElementById("mobileTotal")
+    this.freeText = document.getElementById("freeDeliveryText")
 },
 
 getCookie(name){
-
-let value=null
-
-if(document.cookie && document.cookie!==''){
-
-document.cookie.split(";").forEach(cookie=>{
-
-cookie=cookie.trim()
-
-if(cookie.startsWith(name+"=")){
-value=decodeURIComponent(cookie.substring(name.length+1))
-}
-
-})
-
-}
-
-return value
-
+    let value = null
+    if(document.cookie){
+        document.cookie.split(";").forEach(cookie=>{
+            cookie = cookie.trim()
+            if(cookie.startsWith(name+"=")){
+                value = decodeURIComponent(cookie.substring(name.length+1))
+            }
+        })
+    }
+    return value
 },
 
-updateCart(productId,action){
+// 🔥 MAIN FUNCTION (FIXED)
+updateCart(key, action){
 
-const qtyEl=document.getElementById(`qty-${productId}`)
-const totalEl=document.getElementById(`itemtotal-${productId}`)
-const card=document.getElementById(`item-${productId}`)
+    const qtyEl = document.getElementById(`qty-${key}`)
+    const totalEl = document.getElementById(`itemtotal-${key}`)
+    const card = document.getElementById(`item-${key}`)
 
-if(!qtyEl || !totalEl) return
+    if(!qtyEl || !totalEl) return
 
-let qty=parseInt(qtyEl.innerText)
+    let qty = parseInt(qtyEl.innerText)
 
-if(action==="increase") qty++
-if(action==="decrease") qty=Math.max(0,qty-1)
+    if(action === "increase") qty++
+    if(action === "decrease") qty--
 
-if(qty<=0){
+    if(qty <= 0){
+      if(card){
+          card.classList.add("fade-out")
 
-card?.remove()
+          setTimeout(() => {
+              card.remove()
+              CartManager.recalculate()
+          }, 300)
+      }
+      return
+    } else {
+        qtyEl.innerText = qty
+        const price = parseFloat(totalEl.dataset.price)
+        totalEl.innerText = (price * qty).toFixed(2)
+    }
 
-}else{
+    this.recalculate()
 
-qtyEl.innerText=qty
+    // 🔥 SPLIT KEY (IMPORTANT)
+    const [productId, variantId] = key.split("_")
 
-const price=parseFloat(totalEl.dataset.price)
-totalEl.innerText=(price*qty).toFixed(2)
-
-}
-
-this.recalculate()
-
-this.syncServer(productId,action)
-
+    this.syncServer(productId, variantId, action)
 },
 
-syncServer(productId,action){
+// 🔥 FIXED SERVER CALL
+syncServer(productId, variantId, action){
 
-fetch("/update-cart/",{
-
-method:"POST",
-
-headers:{
-"X-CSRFToken":this.getCookie("csrftoken"),
-"Content-Type":"application/x-www-form-urlencoded"
-},
-
-body:`product_id=${productId}&action=${action}`
-
-})
+    fetch("/update-cart/",{
+        method:"POST",
+        headers:{
+            "X-CSRFToken": this.getCookie("csrftoken"),
+            "Content-Type":"application/x-www-form-urlencoded"
+        },
+        body:`product_id=${productId}&variant_id=${variantId}&action=${action}`
+    })
 
 },
 
 recalculate(){
 
-let subtotal=0
+    let subtotal = 0
 
-document.querySelectorAll(".item-total span").forEach(el=>{
-subtotal += parseFloat(el.innerText) || 0
-})
+    document.querySelectorAll(".item-total span").forEach(el=>{
+        subtotal += parseFloat(el.innerText) || 0
+    })
 
-const gst=subtotal*this.GST_RATE
+    const gst = subtotal * this.GST_RATE
 
-let shipping=0
+    let shipping = 0
+    if(subtotal > 0 && subtotal < this.FREE_DELIVERY_LIMIT){
+        shipping = this.DELIVERY_CHARGE
+    }
 
-if(subtotal>0 && subtotal<this.FREE_DELIVERY_LIMIT){
-shipping=this.DELIVERY_CHARGE
-}
+    const final = subtotal + gst + shipping
 
-const final=subtotal+gst+shipping
+    if(this.subtotalEl) this.subtotalEl.innerText = subtotal.toFixed(2)
+    if(this.gstEl) this.gstEl.innerText = gst.toFixed(2)
 
-if(this.subtotalEl) this.subtotalEl.innerText=subtotal.toFixed(2)
-if(this.gstEl) this.gstEl.innerText=gst.toFixed(2)
+    if(this.shippingEl){
+        this.shippingEl.innerText = (shipping === 0 && subtotal !== 0) ? "FREE" : "₹"+shipping
+    }
 
-if(this.shippingEl){
+    if(this.totalEl) this.totalEl.innerText = final.toFixed(2)
+    if(this.mobileTotal) this.mobileTotal.innerText = final.toFixed(2)
 
-if(shipping===0 && subtotal!==0){
-this.shippingEl.innerText="FREE"
-}else{
-this.shippingEl.innerText="₹"+shipping
-}
-
-}
-
-if(this.totalEl) this.totalEl.innerText=final.toFixed(2)
-if(this.mobileTotal) this.mobileTotal.innerText=final.toFixed(2)
-
-this.updateFreeDeliveryMessage(subtotal)
-
+    this.updateFreeDeliveryMessage(subtotal)
 },
 
 updateFreeDeliveryMessage(subtotal){
 
-if(!this.freeText) return
+    if(!this.freeText) return
 
-if(subtotal>=this.FREE_DELIVERY_LIMIT){
-
-this.freeText.innerText="🎉 You unlocked FREE delivery!"
-
-}else if(subtotal>0){
-
-const remaining=Math.max(0,this.FREE_DELIVERY_LIMIT-subtotal)
-
-this.freeText.innerHTML=
-`🚚 Add <span style="color:#22c55e;font-weight:600">₹${remaining.toFixed(2)}</span> more for FREE delivery`
-
-}else{
-
-this.freeText.innerText=""
-
-}
-
+    if(subtotal >= this.FREE_DELIVERY_LIMIT){
+        this.freeText.innerText = "🎉 You unlocked FREE delivery!"
+    }
+    else if(subtotal > 0){
+        const remaining = this.FREE_DELIVERY_LIMIT - subtotal
+        this.freeText.innerHTML =
+        `🚚 Add <span style="color:#22c55e;font-weight:600">₹${remaining.toFixed(2)}</span> more for FREE delivery`
+    }
+    else{
+        this.freeText.innerText = ""
+    }
 },
 
 addSuggested(productId){
 
-fetch("/update-cart/",{
-
-method:"POST",
-
-headers:{
-"X-CSRFToken":this.getCookie("csrftoken"),
-"Content-Type":"application/x-www-form-urlencoded"
-},
-
-body:`product_id=${productId}&action=add`
-
-}).then(()=>{
-location.reload()
-})
-
+    fetch("/update-cart/",{
+        method:"POST",
+        headers:{
+            "X-CSRFToken": this.getCookie("csrftoken"),
+            "Content-Type":"application/x-www-form-urlencoded"
+        },
+        body:`product_id=${productId}&action=add`
+    }).then(()=> location.reload())
 }
 
 }
 
+// INIT
 document.addEventListener("DOMContentLoaded",()=>{
-CartManager.init()
+    CartManager.init()
 })
 
-function updateCart(id,action){
-CartManager.updateCart(id,action)
+// GLOBAL FUNCTIONS
+function updateCart(id, action){
+    CartManager.updateCart(id, action)
 }
 
 function addSuggested(id){
-CartManager.addSuggested(id)
+    CartManager.addSuggested(id)
 }
 
+function removeItem(key){
+
+    const card = document.getElementById(`item-${key}`)
+    if(card) card.remove()
+
+    const [productId, variantId] = key.split("_")
+
+    fetch("/update-cart/",{
+        method:"POST",
+        headers:{
+            "X-CSRFToken": CartManager.getCookie("csrftoken"),
+            "Content-Type":"application/x-www-form-urlencoded"
+        },
+        body:`product_id=${productId}&variant_id=${variantId}&action=remove`
+    })
+
+    CartManager.recalculate()
+}
 </script>
 
 </body>

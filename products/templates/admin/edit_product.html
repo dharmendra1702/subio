@@ -2,67 +2,147 @@
 <link rel="stylesheet" href="{% static 'css/admin/add_product.css' %}">
 
 <div class="container">
+    <a href="javascript:history.back()" class="back-btn">← Back</a>
 
-<a href="javascript:history.back()" class="back-btn">← Back</a>
+    <form method="POST" enctype="multipart/form-data" class="product-card" id="productForm">
+        {% csrf_token %}
 
-<form method="POST" enctype="multipart/form-data" class="product-card">
+        <!-- IMAGE SECTION -->
+        <div class="image-box">
+            <h3>Product Images</h3>
 
-{% csrf_token %}
+            <input type="file" name="image" id="mainImg" hidden>
+            <label for="mainImg" class="upload-main">Change Main Image</label>
 
-<!-- IMAGE -->
+            <img id="mainPreview" src="{% if product.image %}{{ product.image.url }}{% else %}{% static 'images/placeholder.png' %}{% endif %}">
 
-<div class="image-box">
+            <h4>Gallery Images</h4>
+            <input type="file" name="gallery" id="gallery" multiple hidden>
+            <label for="gallery" class="upload-main">+ Update Gallery</label>
 
-<h3>Current Image</h3>
+            <div id="galleryPreview">
+                {% for img in product.images.all %}
+                <div class="gallery-item">
+                    <img src="{{ img.image.url }}">
+                </div>
+                {% endfor %}
+            </div>
+        </div>
 
-<img src="{{ product.image.url }}" style="max-width:250px;border-radius:15px;margin-bottom:15px">
+        <!-- FORM -->
+        <div class="form-box">
 
-<input type="file" name="image">
+            <h2>Basic Info</h2>
+            <input name="name" value="{{ product.name }}" placeholder="Product name" required>
+            <textarea name="description" placeholder="Description">{{ product.description }}</textarea>
 
+            <h2>Category</h2>
+            <select name="category" required>
+                <option value="">Select Category</option>
+                {% for c in categories %}
+                <option value="{{ c.id }}" {% if product.category_id == c.id %}selected{% endif %}>
+                    {{ c.name }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <h2>Highlights</h2>
+            <textarea name="highlights">{{ product.highlights }}</textarea>
+
+            <!-- ONLY shelf life (net_weight removed) -->
+            <input name="shelf_life"
+                   value="{{ product.shelf_life }}"
+                   placeholder="Shelf Life (e.g., 9 Months)">
+
+            <!-- VARIANTS -->
+            <h2>Variants (Flipkart Style)</h2>
+
+            <div id="variants">
+                {% for v in product.variants.all %}
+                <div class="variant-row">
+                    <div class="variant-card">
+                        <input name="variant_size[]" value="{{ v.size }}" placeholder="Size (500g)" required>
+                        <input name="variant_mrp[]" type="number" value="{{ v.mrp }}" placeholder="MRP ₹" required>
+                        <input name="variant_price[]" type="number" value="{{ v.price }}" placeholder="Selling Price ₹" required>
+
+                        <button type="button" class="remove-var-btn"
+                                onclick="this.closest('.variant-row').remove()">✕</button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <button type="button" class="add-btn" onclick="addVariant()">
+                + Add Variant
+            </button>
+
+            <button type="submit" class="submit">
+                Update Product
+            </button>
+
+        </div>
+    </form>
 </div>
 
-<!-- FORM -->
+<script>
+const mainImg = document.getElementById("mainImg");
+const mainPreview = document.getElementById("mainPreview");
+const gallery = document.getElementById("gallery");
+const galleryPreview = document.getElementById("galleryPreview");
+const variants = document.getElementById("variants");
 
-<div class="form-box">
+/* MAIN IMAGE PREVIEW */
+mainImg.onchange = e => {
+    const file = e.target.files[0];
+    if (file) {
+        mainPreview.src = URL.createObjectURL(file);
+    }
+};
 
-<h2>Edit Product</h2>
+/* GALLERY PREVIEW */
+gallery.onchange = e => {
+    galleryPreview.innerHTML = "";
 
-<input name="name" value="{{ product.name }}" required>
+    [...e.target.files].forEach(file => {
+        let div = document.createElement("div");
+        div.className = "gallery-item";
 
-<textarea name="description">{{ product.description }}</textarea>
+        let img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
 
-<div class="row">
-<input name="price" value="{{ product.price }}" required>
-</div>
+        div.appendChild(img);
+        galleryPreview.appendChild(div);
+    });
+};
 
-<input name="gst_percentage" value="{{ product.gst_percentage }}" placeholder="GST %">
+/* ADD VARIANT */
+function addVariant() {
+    let div = document.createElement("div");
+    div.className = "variant-row";
 
-<select name="category">
-{% for c in categories %}
-<option value="{{ c.id }}" {% if product.category_id == c.id %}selected{% endif %}>
-{{ c.name }}
-</option>
-{% endfor %}
-</select>
+    div.innerHTML = `
+        <div class="variant-card">
+            <input name="variant_size[]" placeholder="Size (500g)" required>
+            <input name="variant_mrp[]" type="number" placeholder="MRP ₹" required>
+            <input name="variant_price[]" type="number" placeholder="Selling Price ₹" required>
+            <button type="button" class="remove-var-btn" onclick="this.closest('.variant-row').remove()">✕</button>
+        </div>
+    `;
 
-<h3>Highlights</h3>
-<textarea name="highlights">{{ product.highlights }}</textarea>
+    variants.appendChild(div);
+}
 
-<h3>Specifications</h3>
+/* SAFETY: if no variants exist */
+window.onload = () => {
+    if (variants.children.length === 0) {
+        addVariant();
+    }
+};
 
-<input name="brand" value="{{ product.brand }}" placeholder="Brand">
-<input name="net_weight" value="{{ product.net_weight }}" placeholder="Net Weight">
-<input name="shelf_life" value="{{ product.shelf_life }}" placeholder="Shelf Life">
-
-<h3>SEO</h3>
-
-<input name="meta_title" value="{{ product.meta_title }}" placeholder="Meta Title">
-<textarea name="meta_description">{{ product.meta_description }}</textarea>
-
-<button class="submit">Update Product</button>
-
-</div>
-
-</form>
-
-</div>
+document.getElementById("productForm").onsubmit = function () {
+    if (variants.children.length === 0) {
+        alert("Add at least one variant");
+        return false;
+    }
+};
+</script>

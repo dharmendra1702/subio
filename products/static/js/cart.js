@@ -150,16 +150,21 @@ qtyBox.style.display="none";
 
 /* ================= SERVER SYNC ================= */
 
-function syncServer(productId,action){
+function syncServer(productId, variantId, action){
 
-fetch(UPDATE_CART_URL,{
-method:"POST",
-headers:{
-"Content-Type":"application/x-www-form-urlencoded",
-"X-CSRFToken":csrftoken
-},
-body:`product_id=${productId}&action=${action}`
-});
+fetch("/update-cart/", {
+    method: "POST",
+    credentials: "same-origin",
+    headers:{
+        "X-CSRFToken": getCookie("csrftoken"),
+        "Content-Type":"application/json"
+    },
+    body: JSON.stringify({
+        product_id: productId,
+        variant_id: variantId,
+        action: action
+    })
+})
 
 }
 

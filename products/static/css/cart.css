@@ -414,3 +414,59 @@ display:flex;
 }
 
 }
+
+.remove-btn{
+    background:none;        /* remove box */
+    border:none;            /* remove border */
+    padding:0;              /* no spacing */
+
+    color:#e53935;          /* red text */
+    font-size:14px;
+    font-weight:500;
+
+    cursor:pointer;
+
+    display:inline-block;   /* keep inline */
+}
+
+
+/* ================= FIX REMOVE POSITION ================= */
+
+.cart-details{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    position:relative;   /* needed for positioning */
+}
+
+/* ===== FADE OUT ANIMATION ===== */
+
+.fade-out{
+    opacity:0;
+    transform:translateX(20px);
+    transition:all 0.3s ease;
+}
+
+.remove-btn{
+    background:none;
+    border:none;
+    padding:0;
+
+    color:#e53935;
+    font-size:14px;
+    font-weight:500;
+
+    cursor:pointer;
+
+    position:absolute;
+    right:0;
+    bottom:0;
+
+    transition:all 0.2s ease;
+}
+
+/* 🔥 NEW HOVER (NO UNDERLINE) */
+.remove-btn:hover{
+    color:#b71c1c;              /* darker red */
+    transform:translateX(2px);  /* slight move */
+}

@@ -1,5 +1,67 @@
 {% load static %}
 <!-- CART DRAWER -->
+ <style>
+.drawer-item {
+    display: flex;
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+    transition: 0.2s;
+}
+
+.drawer-item:hover {
+    background: #fafafa;
+}
+
+/* IMAGE */
+.drawer-img img {
+    width: 75px;
+    height: 75px;
+    object-fit: cover;
+    border-radius: 12px;
+    background: #f5f5f5;
+}
+
+/* DETAILS */
+.drawer-details {
+    flex: 1;
+}
+
+/* NAME */
+.item-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+/* PRICE */
+.item-price {
+    font-size: 13px;
+    color: #777;
+}
+
+/* BOTTOM ROW */
+.item-bottom {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+}
+
+/* QTY */
+.item-qty {
+    font-size: 12px;
+    color: #888;
+}
+
+/* SUBTOTAL */
+.item-subtotal {
+    font-size: 14px;
+    font-weight: 600;
+    color: #000;
+}
+
+</style>
 
 <div id="cartOverlay" class="cart-overlay" onclick="closeCart()"></div>
 
@@ -37,3 +99,198 @@ View Cart
 </div>
 
 </div>
+
+<script>
+
+// ==========================================
+// SUBIO FOODS - CART DRAWER LOGIC (PERFECTED)
+// ==========================================
+
+// Shared state for the drawer
+let drawerData = { items: [], cart_count: 0 };
+let isDrawerBusy = false; // Prevents spamming clicks
+
+/**
+ * Safely fetches the CSRF token
+ */
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || "";
+}
+
+// ================= OPEN / CLOSE =================
+
+function openCart() {
+    const drawer = document.getElementById('cartDrawer');
+    const overlay = document.getElementById('cartOverlay');
+    
+    drawer.classList.add('open');
+    overlay.classList.add('show');
+    
+    // Always fetch fresh data when opening to be safe
+    loadDrawer();
+}
+
+function closeCart() {
+    document.getElementById('cartDrawer').classList.remove('open');
+    document.getElementById('cartOverlay').classList.remove('show');
+}
+
+// ================= SYNC & RENDER =================
+
+/**
+ * Fetches the current cart state from the server
+ */
+function loadDrawer() {
+    fetch("/cart-json/")
+        .then(res => res.json())
+        .then(data => {
+            drawerData = data;
+            renderDrawer(drawerData);
+            syncNavbar(drawerData);
+        })
+        .catch(err => console.error("Drawer Sync Failed:", err));
+}
+
+/**
+ * Generates the HTML for the drawer based on state
+ */
+function renderDrawer(data) {
+    drawerData = data;
+
+    const container = document.getElementById("drawerItems");
+    const totalEl = document.getElementById("drawerTotal");
+
+    const footer = document.querySelector(".drawer-footer");
+
+    if (!data.items || data.items.length === 0) {
+        container.innerHTML = document.getElementById("emptyCart").outerHTML;
+        totalEl.innerText = "0.00";
+
+        // ✅ HIDE footer (View Cart + Total)
+        if (footer) footer.style.display = "none";
+
+        return;
+    }
+
+    // ✅ SHOW footer when items exist
+    if (footer) footer.style.display = "flex";
+
+    let html = "";
+    let total = 0;
+
+    data.items.forEach(item => {
+        const subtotal = item.price * item.quantity;
+        total += subtotal;
+
+        html += `
+        <div class="drawer-item">
+
+            <div class="drawer-img">
+                <img src="${item.image || '/static/images/default.png'}" alt="${item.name}">
+            </div>
+
+            <div class="drawer-details">
+                <p class="item-name">${item.name}</p>
+                <p class="item-price">₹${item.price}</p>
+
+                <div class="item-bottom">
+                    <span class="item-qty">Qty: ${item.quantity}</span>
+                    <span class="item-subtotal">₹${(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+            </div>
+
+        </div>
+        `;
+    });
+
+    container.innerHTML = html;
+    totalEl.innerText = total.toFixed(2);
+}
+
+// ================= UPDATE LOGIC =================
+
+/**
+ * Handles quantity changes inside the drawer with Optimistic UI
+ */
+function updateQtyDrawer(pId, vId, change) {
+    if (isDrawerBusy) return;
+
+    // ✅ NEW LOGIC HERE
+    let item = drawerData.items.find(i => 
+        String(i.product_id) === String(pId) && 
+        String(i.variant_id) === String(vId)
+    );
+
+    if (item) {
+        item.quantity += change;
+
+        if (item.quantity <= 0) {
+            drawerData.items = drawerData.items.filter(i =>
+                !(String(i.product_id) === String(pId) && 
+                  String(i.variant_id) === String(vId))
+            );
+        }
+    }
+
+    // ✅ KEEP BELOW SAME
+    drawerData.cart_count = drawerData.items.reduce((sum, i) => sum + (i.quantity || 0), 0);
+
+    renderDrawer(drawerData);
+    syncNavbar(drawerData);
+
+    if (typeof window.loadInitialQty === "function") {
+        window.loadInitialQty();
+    }
+
+    // ⚡ STEP 2: BACKEND SYNC
+    isDrawerBusy = true;
+    const action = change > 0 ? "increase" : "decrease";
+    const formData = new FormData();
+    formData.append("product_id", pId);
+    formData.append("variant_id", vId);
+    formData.append("action", action);
+
+    fetch("/update-cart/", {
+        method: "POST",
+        headers: { 'X-CSRFToken': getCSRFToken() },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        // Overwrite optimistic data with ground truth from server
+        drawerData = data;
+        renderDrawer(drawerData);
+        syncNavbar(drawerData);
+        
+        // Final sync with product page
+        if (typeof window.loadInitialQty === "function") {
+            window.loadInitialQty();
+        }
+    })
+    .catch(err => {
+        console.error("Cart Update Failed:", err);
+    })
+    .finally(() => {
+        isDrawerBusy = false;
+    });
+}
+
+/**
+ * Updates any navbar cart counters present on the page
+ */
+function syncNavbar(data) {
+    const cartCountEl = document.getElementById("cartCount");
+    if (!cartCountEl) return;
+
+    // Use server provided count, or calculate locally
+    const count = data.cart_count !== undefined ? data.cart_count : 
+                  data.items?.reduce((sum, i) => sum + (i.quantity || 0), 0) || 0;
+
+    cartCountEl.innerText = count;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadDrawer();   // ✅ VERY IMPORTANT
+});
+
+</script>

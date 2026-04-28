@@ -35,7 +35,7 @@ urlpatterns = [
 
     # ================= CART =================
     path("cart/", views.cart_view, name="cart"),
-    path("remove/<int:product_id>/", views.remove_from_cart, name="remove_from_cart"),
+    path("remove/<str:key>/", views.remove_from_cart, name="remove_from_cart"),
     path("update-cart/", views.update_cart, name="update_cart"),
 
     path("cart-json/", views.cart_json, name="cart_json"),
@@ -61,6 +61,7 @@ urlpatterns = [
     path("dashboard/orders/",views.admin_orders,name="admin_orders"),
     path("dashboard/orders/<str:order_id>/",views.admin_order_detail,name="admin_order_detail"),
     path("dashboard/api/stats/", views.dashboard_stats),
+    path('product/<int:product_id>/add_review/', views.add_review, name='add_review'),
     
     # ================= ADMIN PRODUCTS =================
     path("products-admin/", views.products_admin, name="products_admin"),

@@ -6,11 +6,12 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
 import razorpay
 from django.conf import settings
-from .models import Category
+from .models import Category, Review
 from decimal import ROUND_HALF_UP, Decimal
 import os
 from .models import Order, OrderItem, Product, Address
 import threading
+from .models import ProductVariant
 
 def home(request):
     categories = Category.objects.all()
@@ -235,14 +236,13 @@ def delete_category(request,id):
 
 
 @staff_member_required
-def inline_add_product(request,cat_id):
+def inline_add_product(request, cat_id):
 
     if request.method == "POST":
 
         Product.objects.create(
             category_id=cat_id,
             name=request.POST["name"],
-            price=request.POST["price"],
             image=request.FILES["image"]
         )
 
@@ -260,15 +260,15 @@ def products_admin(request):
 
     categories = Category.objects.all()
 
-    products = Product.objects.all()
+    products = Product.objects.prefetch_related("variants", "category").all()
 
     if category_id:
         products = products.filter(category_id=category_id)
 
-    return render(request,"admin/products_admin.html",{
-        "products":products,
-        "categories":categories,
-        "active_category":category_id
+    return render(request, "admin/products_admin.html", {
+        "products": products,
+        "categories": categories,
+        "active_category": category_id
     })
 
 import json
@@ -288,77 +288,121 @@ def add_product(request):
 
     if request.method == "POST":
 
+        # ✅ GET IMAGE
         image = request.FILES.get("image")
 
+        # 🚨 VALIDATION
         if not image:
-            return render(request,"admin/add_product.html",{
-                "categories":categories,
-                "error":"Please upload image"
+            return render(request, "admin/add_product.html", {
+                "categories": categories,
+                "error": "Main image is required"
             })
 
-        # ✅ SAVE PRODUCT FIRST
+        # ✅ CREATE PRODUCT
         product = Product.objects.create(
-            category_id=request.POST["category"],
-            name=request.POST["name"],
-            description=request.POST.get("description",""),
-            price=request.POST["price"],
+            category_id=request.POST.get("category"),
+            name=request.POST.get("name"),
+            description=request.POST.get("description", ""),
             image=image,
-
-            highlights=request.POST.get("highlights",""),
-            brand=request.POST.get("brand",""),
-            shelf_life=request.POST.get("shelf_life",""),
-            net_weight=request.POST.get("net_weight",""),
-            gst_percentage=request.POST.get("gst_percentage",0),
-
-            meta_title=request.POST.get("meta_title",""),
-            meta_description=request.POST.get("meta_description","")
+            highlights=request.POST.get("highlights", ""),
+            shelf_life=request.POST.get("shelf_life", "")
         )
 
-        # ✅ SAVE GALLERY IMAGES
+        # ================= VARIANTS =================
+        sizes = request.POST.getlist("variant_size[]")
+        mrps = request.POST.getlist("variant_mrp[]")
+        prices = request.POST.getlist("variant_price[]")
+
+        for i in range(len(sizes)):
+            size = sizes[i].strip()
+            price = prices[i]
+
+            if size and price:
+                ProductVariant.objects.create(
+                    product=product,
+                    size=size,
+                    mrp=mrps[i] or 0,
+                    price=price,
+                    stock=50
+                )
+
+        # ================= GALLERY =================
+        from .models import ProductImage
+
         gallery_files = request.FILES.getlist("gallery")
 
         for img in gallery_files:
-            ProductImage.objects.create(product=product, image=img)
+            ProductImage.objects.create(
+                product=product,
+                image=img
+            )
 
         return redirect("products_admin")
 
-    return render(request,"admin/add_product.html",{"categories":categories})
+    return render(request, "admin/add_product.html", {
+        "categories": categories
+    })
 
 @staff_member_required
-def edit_product(request,id):
+def edit_product(request, id):
 
-    product = get_object_or_404(Product,id=id)
+    product = get_object_or_404(Product, id=id)
     categories = Category.objects.all()
 
     if request.method == "POST":
 
+        # BASIC INFO
         product.category_id = request.POST["category"]
         product.name = request.POST["name"]
-        product.description = request.POST.get("description","")
-        product.price = request.POST["price"]
+        product.description = request.POST.get("description", "")
+        product.highlights = request.POST.get("highlights", "")
+        product.shelf_life = request.POST.get("shelf_life", "")
 
-        # EXTRA FIELDS
-        product.highlights = request.POST.get("highlights","")
-        product.brand = request.POST.get("brand","")
-        product.net_weight = request.POST.get("net_weight","")
-        product.shelf_life = request.POST.get("shelf_life","")
-        product.gst_percentage = request.POST.get("gst_percentage",0)
-
-        product.meta_title = request.POST.get("meta_title","")
-        product.meta_description = request.POST.get("meta_description","")
-
+        # MAIN IMAGE
         if request.FILES.get("image"):
             product.image = request.FILES["image"]
 
         product.save()
 
+        # ================= GALLERY =================
+        from .models import ProductImage
+
+        gallery_files = request.FILES.getlist("gallery")
+
+        if gallery_files:
+            product.images.all().delete()  # optional replace
+            for img in gallery_files:
+                ProductImage.objects.create(
+                    product=product,
+                    image=img
+                )
+
+        # ================= VARIANTS =================
+        product.variants.all().delete()
+
+        sizes = request.POST.getlist("variant_size[]")
+        mrps = request.POST.getlist("variant_mrp[]")
+        prices = request.POST.getlist("variant_price[]")
+
+        for i in range(len(sizes)):
+            size = sizes[i].strip()
+            price = prices[i]
+
+            if size and price:
+                ProductVariant.objects.create(
+                    product=product,
+                    size=size,
+                    mrp=mrps[i] or 0,
+                    price=price,
+                    stock=50
+                )
+
         return redirect("products_admin")
 
-    return render(request,"admin/edit_product.html",{
-        "product":product,
-        "categories":categories
+    return render(request, "admin/edit_product.html", {
+        "product": product,
+        "categories": categories
     })
-
 
 @staff_member_required
 def delete_product(request,id):
@@ -369,7 +413,7 @@ def delete_product(request,id):
 # <=================== USER PRODUCTS ==================>
 
 def products(request):
-    products = Product.objects.all()
+    products = Product.objects.prefetch_related("variants", "category")
     categories = Category.objects.all()
     cart = request.session.get("cart", {})
 
@@ -378,7 +422,7 @@ def products(request):
         "categories": categories,
         "cart": cart,
         "cart_count": get_cart_count(request),
-        "active_category": "all"   # 👈 important
+        "active_category": "all"
     })
 
 def products_by_category(request, slug):
@@ -396,49 +440,125 @@ def products_by_category(request, slug):
         "active_category": category.slug
     })
 
+from django.db.models import Avg, Count
+
 def product_detail(request, id):
-    product = get_object_or_404(Product, id=id)
-    cart = request.session.get("cart", {})
+    product = get_object_or_404(Product.objects.prefetch_related("variants", "images", "reviews__user"), id=id)
+    
+    # Check if user has purchased this product
+    has_purchased = False
+    if request.user.is_authenticated:
+        has_purchased = OrderItem.objects.filter(
+            order__user=request.user, 
+            product=product, 
+            order__status="delivered"
+        ).exists()
+
+    # Handle Review Submission
+    if request.method == "POST" and has_purchased:
+        rating = request.POST.get('rating')
+        comment = request.POST.get('comment')
+        Review.objects.create(product=product, user=request.user, rating=rating, comment=comment)
+        return redirect('product_detail', id=product.id)
+
+    stats = product.reviews.aggregate(avg=Avg('rating'), count=Count('id'))
+    
+    for v in product.variants.all():
+        if v.mrp and v.price:
+            v.discount_percent = int(((v.mrp - v.price) / v.mrp) * 100)
+        else:
+            v.discount_percent = 0
 
     return render(request, "product_detail.html", {
         "product": product,
-        "cart": cart
+        "avg_rating": stats['avg'] or 0,
+        "total_reviews": stats['count'] or 0,
+        "reviews": product.reviews.all(),
+        "has_purchased": has_purchased,
+        "cart": request.session.get("cart", {})
     })
 
 
-@require_POST
+import json
+from django.http import JsonResponse
+from .models import ProductVariant
+
 def update_cart(request):
+    if request.method == "POST":
+        try:
+            if request.content_type and "application/json" in request.content_type:
+                data = json.loads(request.body)
+            else:
+                data = request.POST
 
-    product_id = str(request.POST.get("product_id"))
-    action = request.POST.get("action")
+            product_id = str(data.get("product_id"))
+            variant_id = str(data.get("variant_id"))
+            action = data.get("action")
 
-    product = get_object_or_404(Product, id=product_id)
+            key = f"{product_id}_{variant_id}"
+            cart = request.session.get("cart", {})
 
-    cart = request.session.get("cart", {})
+            if action == "add":
+                variant = ProductVariant.objects.get(id=variant_id)
+                product = variant.product
 
-    if action == "add":
-        cart.setdefault(product_id,{
-            "name": product.name,
-            "price": float(product.price),
-            "image": product.image.url if product.image else "",
-            "quantity":0
-        })
-        cart[product_id]["quantity"] += 1
+                if key in cart:
+                    cart[key]["quantity"] += 1
+                else:
+                    cart[key] = {
+                        "product_id": product_id,
+                        "variant_id": variant_id,
+                        "name": f"{product.name} ({variant.size})",
+                        "price": float(variant.price),
+                        "image": product.image.url if product.image else "",
+                        "quantity": 1
+                    }
 
-    elif action == "increase":
-        if product_id in cart:
-            cart[product_id]["quantity"] += 1
+            elif action == "increase":
+                if key in cart:
+                    cart[key]["quantity"] += 1
 
-    elif action == "decrease":
-        if product_id in cart:
-            cart[product_id]["quantity"] -= 1
-            if cart[product_id]["quantity"] <= 0:
-                del cart[product_id]
+            elif action == "remove":
+                if key in cart:
+                    del cart[key]
 
-    request.session["cart"] = cart
-    request.session.modified = True
+            elif action == "decrease":
+                if key in cart:
+                    if cart[key]["quantity"] <= 1:
+                        del cart[key]   # 🔥 FORCE REMOVE WHEN 1
+                    else:
+                        cart[key]["quantity"] -= 1
 
-    return JsonResponse({"status":"ok"})
+            request.session["cart"] = cart
+            request.session.modified = True
+
+            # ✅ RETURN FULL CART
+            items = []
+            total = 0
+
+            for k, item in cart.items():
+                subtotal = item["price"] * item["quantity"]
+                total += subtotal
+
+                items.append({
+                    "id": k,
+                    "product_id": item["product_id"],
+                    "variant_id": item["variant_id"],
+                    "name": item["name"],
+                    "price": item["price"],
+                    "quantity": item["quantity"],
+                    "image": item["image"]
+                })
+
+            return JsonResponse({
+                "items": items,
+                "cart_count": sum(i["quantity"] for i in cart.values()),
+                "total": total
+            })
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
 
 import random
 
@@ -450,12 +570,10 @@ def cart_view(request):
     total = 0
 
     for item in cart.values():
-
-        price = Decimal(str(item["price"]))
-        quantity = int(item["quantity"])
+        price = Decimal(str(item.get("price", 0)))
+        quantity = int(item.get("quantity", 0))
 
         item["subtotal"] = price * quantity
-
         total += item["subtotal"]
 
     coupon_discount = request.session.get("coupon_discount", 0)
@@ -470,11 +588,11 @@ def cart_view(request):
     })
 
 
-def remove_from_cart(request, product_id):
+def remove_from_cart(request, key):
     cart = request.session.get("cart", {})
 
-    if str(product_id) in cart:
-        del cart[str(product_id)]
+    if key in cart:
+        del cart[key]
 
     request.session["cart"] = cart
     request.session.modified = True
@@ -483,29 +601,29 @@ def remove_from_cart(request, product_id):
 
 
 def cart_json(request):
+    cart = request.session.get("cart", {})
 
-    cart=request.session.get("cart",{})
+    items = []
+    total = 0
 
-    items=[]
-    total=0
-
-    for key,item in cart.items():
-
-        subtotal=item["price"]*item["quantity"]
+    for key, item in cart.items():
+        subtotal = item["price"] * item["quantity"]
+        total += subtotal
 
         items.append({
-            "id":key,
-            "name":item["name"],
-            "price":item["price"],
-            "quantity":item["quantity"],
-            "image":item["image"]
+            "id": key,
+            "product_id": item["product_id"],   # ✅ ADD THIS
+            "variant_id": item["variant_id"],   # ✅ ADD THIS
+            "name": item["name"],
+            "price": item["price"],
+            "quantity": item["quantity"],
+            "image": item["image"]
         })
 
-        total+=subtotal
-
     return JsonResponse({
-        "items":items,
-        "total":total
+        "items": items,
+        "cart_count": sum(i["quantity"] for i in cart.values()),  # ✅ ADD
+        "total": total
     })
 
 from django.contrib.auth.decorators import login_required
@@ -980,21 +1098,25 @@ def place_order(request):
         total=final_total,
     )
 
-    # ORDER ITEMS
-    product_ids = cart.keys()
-    products = Product.objects.filter(id__in=product_ids).in_bulk()
-
+    # ORDER ITEMS (FIXED FOR VARIANT CART)
     order_items = []
 
-    for pid, item in cart.items():
-        product = products.get(int(pid))
-        if not product:
+    for key, item in cart.items():
+
+        product_id = item["product_id"]
+
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
             continue
+
+        variant = ProductVariant.objects.get(id=item["variant_id"])
 
         order_items.append(
             OrderItem(
                 order=order,
                 product=product,
+                variant=variant,   # ✅ FIXED
                 quantity=item["quantity"],
                 price=item["price"]
             )
@@ -1261,6 +1383,23 @@ def send_order_email(order):
         logo_base64 = safe_image(logo_file)
         signature_base64 = safe_image(signature_file)
 
+                # -------- GENERATE PDF --------
+        template = get_template("invoice.html")
+
+        html_pdf = template.render({
+            "order": order,
+            "items": items,
+            "subtotal": subtotal,
+            "gst": gst,
+            "shipping": shipping,
+            "coupon": coupon,
+            "total": total,
+            "amount_words": amount_words,
+            "qr_code": qr_base64,
+            "logo_base64": logo_base64,
+            "signature_base64": signature_base64
+        })
+
         if len(items) > 15:
             print("⚠️ Skipping PDF (too many items)")
             pdf_bytes = None
@@ -1502,3 +1641,34 @@ def send_email_with_fallback(subject, html_message, to_email, pdf_bytes=None, fi
         print("❌ SendGrid failed:", e)
 
     return False
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import Product, Review, OrderItem
+
+@login_required
+def add_review(request, product_id):
+    if request.method == "POST":
+        product = get_object_or_404(Product, id=product_id)
+        
+        # Security check: Ensure they actually bought it (matches your detail view logic)
+        has_purchased = OrderItem.objects.filter(
+            order__user=request.user, 
+            product=product, 
+            order__status="delivered"
+        ).exists()
+
+        if has_purchased:
+            rating = request.POST.get('rating')
+            comment = request.POST.get('comment')
+            if rating and comment:
+                Review.objects.create(
+                    product=product, 
+                    user=request.user, 
+                    rating=rating, 
+                    comment=comment
+                )
+        
+        return redirect('product_detail', id=product_id)
+    
+    return redirect('products')

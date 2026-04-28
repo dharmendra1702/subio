@@ -246,6 +246,29 @@ flex-direction:column;
 
 }
 
+.payment-box{
+    text-align:right;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:6px;
+}
+
+.payment-title{
+    font-size:14px;
+    color:#444;
+    font-weight:500;
+}
+
+.txn{
+    font-size:12px;
+    color:#666;
+    background:#f5f5f5;
+    padding:4px 8px;
+    border-radius:5px;
+    word-break:break-all;
+}
+
 </style>
 
 </head>
@@ -265,9 +288,20 @@ flex-direction:column;
 <div class="date">{{order.created_at|date:"d M Y, h:i A"}}</div>
 </div>
 
-<div>
-Payment: {{order.payment_method|title}}<br>
-<span class="status {{order.status}}">{{order.status}}</span>
+<div class="payment-box">
+    <div class="payment-title">
+        Payment: {{order.payment_method|title}}
+    </div>
+
+    <span class="status {% if order.payment_status == 'Paid' %}delivered{% else %}pending{% endif %}">
+        {{order.payment_status}}
+    </span>
+
+    {% if order.razorpay_payment_id %}
+    <div class="txn">
+        Txn ID: {{order.razorpay_payment_id}}
+    </div>
+    {% endif %}
 </div>
 
 </div>

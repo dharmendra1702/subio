@@ -294,8 +294,13 @@ align-items:flex-start;
 </div>
 
 <div class="payment-info">
-<div class="payment-method">Payment: {{order.payment_method|title}}</div>
-<span class="status {{order.status}}">{{order.status}}</span>
+    <div class="payment-method">
+        Payment: {{order.payment_method|upper}}
+    </div>
+
+    <span class="status {% if order.payment_status == 'Paid' %}delivered{% else %}pending{% endif %}">
+        {{order.payment_status}}
+    </span>
 </div>
 
 </div>

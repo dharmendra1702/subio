@@ -1,12 +1,386 @@
-{% load static %}
-{% load cart_tags %}
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/product_detail.css' %}">
-<link rel="stylesheet" href="{% static 'css/header_footer.css' %}">
-<link rel="stylesheet" href="{% static 'css/cart_drawer.css' %}">
+{% load static %}{% load cart_tags %}{% load math_filters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }} | Subio Foods</title>
+    <link rel="stylesheet" href="{% static 'css/header_footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cart_drawer.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet">
+    
+   <style>
+    :root {
+        --accent: #1a1a1a;
+        --muted: #71717A;
+        --bg-light: #F8F8F8;
+        --border: #E4E4E7;
+        --white: #ffffff;
+        --gold: #D4AF37;
+        --radius-lg: 24px;
+        --success: #22C55E;
+        --error: #EF4444;
+    }
 
-<header class="navbar">
+    body {
+        background-color: var(--white);
+        color: var(--accent);
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* --- LAYOUT --- */
+    .master-wrapper {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 120px 20px 60px 20px; 
+    }
+
+    .product-top-section {
+        display: grid;
+        grid-template-columns: 500px 1fr;
+        gap: 60px;
+        margin-bottom: 80px;
+        align-items: start;
+    }
+
+    /* --- STICKY GALLERY --- */
+    .gallery-container {
+        position: sticky;
+        top: 110px; 
+    }
+
+    .main-image-box {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        background: var(--bg-light);
+        border-radius: var(--radius-lg);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.02);
+    }
+
+    .main-image-box img {
+        width: 80%;
+        height: 80%;
+        object-fit: contain;
+        transition: opacity 0.3s ease;
+    }
+
+    /* --- NAVIGATION --- */
+    .nav-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        z-index: 5;
+        transition: 0.2s;
+    }
+    .nav-arrow:hover { background: var(--white); scale: 1.1; }
+    .prev-arrow { left: 5px; }
+    .next-arrow { right: 5px; }
+
+    .thumb-rail {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    .thumb-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid transparent;
+        padding: 2px;
+        background: white;
+        transition: 0.3s;
+    }
+
+    .thumb-circle img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .thumb-circle.active { border-color: var(--accent); transform: translateY(-3px); }
+
+    /* --- PRODUCT INFO --- */
+    .cat-tag { text-transform: uppercase; letter-spacing: 2px; font-size: 0.75rem; font-weight: 800; color: var(--muted); }
+    .prod-name { font-family: 'Fraunces', serif; font-size: clamp(2rem, 5vw, 3.5rem); margin: 10px 0; line-height: 1; }
+    
+    .price-row { display: flex; align-items: baseline; gap: 15px; margin: 25px 0; }
+    .price-now { font-size: 2.5rem; font-weight: 700; }
+    .price-old { text-decoration: line-through; color: var(--muted); font-size: 1.3rem; }
+    .discount-pill { background: #DCFCE7; color: #166534; padding: 6px 14px; border-radius: 100px; font-weight: 700; font-size: 0.9rem; }
+
+    .v-title { font-weight: 800; font-size: 0.75rem; margin-bottom: 15px; display: block; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); }
+    .v-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 30px; }
+    .v-btn {
+        padding: 14px 28px;
+        border: 2px solid var(--border);
+        border-radius: 100px;
+        font-weight: 700;
+        cursor: pointer;
+        background: white;
+        transition: 0.2s;
+    }
+    .v-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+    .add-btn {
+        width: 100%;
+        background: var(--accent);
+        color: white;
+        padding: 22px;
+        border-radius: 100px;
+        font-size: 1.1rem;
+        font-weight: 800;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* --- STARS COMPONENT --- */
+    .stars-outer {
+        position: relative;
+        display: inline-block;
+        color: #e0e0e0;
+        font-family: serif;
+        line-height: 1;
+        font-size: 1.5rem;
+    }
+    .stars-outer::before { content: "★★★★★"; letter-spacing: 2px; }
+    .stars-inner {
+        position: absolute;
+        top: 0;
+        left: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        color: var(--gold);
+        transition: width 0.6s ease;
+    }
+    .stars-inner::before { content: "★★★★★"; letter-spacing: 2px; }
+
+    /* --- REVIEWS --- */
+    .reviews-section {
+        border-top: 1px solid var(--border);
+        padding-top: 60px;
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 60px;
+    }
+
+    .review-card { padding: 30px 0; border-bottom: 1px solid var(--border); }
+    .rev-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
+    .rev-avatar { width: 45px; height: 45px; background: var(--bg-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+    
+    .review-form-card {
+        background: var(--bg-light);
+        padding: 40px;
+        border-radius: var(--radius-lg);
+        margin-top: 40px;
+    }
+    .review-input {
+        width: 100%;
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        font-family: inherit;
+        margin-bottom: 20px;
+        resize: vertical;
+    }
+
+    @media (max-width: 900px) {
+        .product-top-section { grid-template-columns: 1fr; }
+        .gallery-container { position: relative; top: 0; }
+        .reviews-section { grid-template-columns: 1fr; }
+        .master-wrapper { padding-top: 100px; }
+    }
+
+    .qty-box-interactive {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1a1a1a;
+    color: white;
+    border-radius: 100px;
+    padding: 12px 20px;
+    font-weight: 700;
+}
+
+.qty-btn {
+    background: white;
+    color: black;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+#qtyVal {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.qty-box-interactive {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1a1a1a;
+    color: white;
+    border-radius: 100px;
+    padding: 12px 20px;
+    font-weight: 700;
+
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.25s ease;
+}
+
+.qty-box-interactive.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.add-btn.hide {
+    opacity: 0;
+    transform: scale(0.9);
+    pointer-events: none;
+}
+
+.add-btn {
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    padding: 16px 20px;   /* 🔥 match qty box */
+    border-radius: 100px;
+    font-size: 1rem;
+    font-weight: 800;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.qty-box-interactive {
+    padding: 16px 20px;   /* 🔥 SAME as button */
+}
+
+.product-content {
+    max-width: 420px;   /* 🔥 controls width */
+}
+
+.product-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;   /* 🔥 prevents stretch */
+}
+
+.qty-box-interactive {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background: #1a1a1a;
+    color: white;
+    border-radius: 100px;
+
+    padding: 16px 20px;
+
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.25s ease;
+}
+
+.qty-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: white;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.add-btn {
+    padding: 16px 20px;
+}
+
+/* ===== FIX BUTTON POSITION ===== */
+
+/* spacing below variants */
+.variant-wrap {
+    margin-bottom: 10px;      /* adjust if needed */
+}
+
+/* button spacing */
+.add-btn {
+    margin-top: 10px;         /* 🔥 exactly below variants */
+    padding: 12px 18px;       /* 🔥 smaller height */
+    font-size: 0.9rem;
+}
+
+/* qty box same size */
+.qty-box-interactive {
+    margin-top: 10px;
+    padding: 12px 18px;
+}
+
+.add-btn {
+    border-radius: 12px;   /* less rounded */
+}
+
+/* ===== SAME SIZE FIX ===== */
+
+.add-btn,
+.qty-box-interactive {
+    width: 220px;          /* 🔥 FIXED WIDTH */
+    height: 48px;          /* 🔥 SAME HEIGHT */
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    box-sizing: border-box;
+}
+
+/* qty layout */
+.qty-box-interactive {
+    justify-content: space-between;
+    padding: 0 12px;       /* 🔥 not full padding */
+}
+
+/* qty buttons */
+.qty-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+}
+
+/* qty number */
+#qtyVal {
+    flex: 1;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+
+    <header class="navbar">
 
   <!-- LEFT -->
   <div class="nav-left">
@@ -116,377 +490,442 @@ Cart (<span id="cartCount">{{ cart_count|default:"0" }}</span>)
 
 </header>
 
-<div class="product-wrapper">
+<div class="master-wrapper">
+    <section class="product-top-section">
+        <div class="gallery-container">
+            <div class="main-image-box">
+                <button class="nav-arrow prev-arrow" onclick="moveGallery(-1)">&#10094;</button>
+                <img src="{{ product.image.url }}" id="mView" alt="{{ product.name }}">
+                <button class="nav-arrow next-arrow" onclick="moveGallery(1)">&#10095;</button>
+            </div>
+            
+            <div class="thumb-rail">
+                <div class="thumb-circle active" onclick="sync(this)"><img src="{{ product.image.url }}"></div>
+                {% for img in product.images.all %}
+                <div class="thumb-circle" onclick="sync(this)"><img src="{{ img.image.url }}"></div>
+                {% endfor %}
+            </div>
+        </div>
 
-<!-- LEFT -->
+        <div class="product-content">
+            <div class="info-header">
+                <span class="cat-tag">{{ product.category.name }}</span>
+                <h1 class="prod-name">{{ product.name }}</h1>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                    <div class="stars-outer" style="font-size: 1rem;">
+                        <div class="stars-inner" style="width: {% widthratio product.average_rating 5 100 %}%"></div>
+                    </div>
+                    
+                    <span style="color: var(--muted); font-size: 0.9rem; font-weight: 600;">
+                        ({{ product.average_rating|floatformat:1 }}/5.0)
+                    </span>
+                </div>
+            </div>
 
-<div class="product-images">
+            <div class="price-row">
+                <span class="price-now" id="dPrice">₹{{ product.variants.first.price|floatformat:2 }}</span>
+                <span class="price-old" id="dMrp">₹{{ product.variants.first.mrp|floatformat:2 }}</span>
+                <span class="discount-pill" id="dSave">{{ product.variants.first.mrp|subtract:product.variants.first.price|divide:product.variants.first.mrp|multiply:100|floatformat:0 }}% OFF</span>
+            </div>
 
-  <div class="slider" id="slider">
+            <div class="variant-wrap">
+                <span class="v-title">Select Pack Size</span>
+                <div class="v-grid">
+                    {% for v in product.variants.all %}
+                    <div class="v-btn {% if forloop.first %}active{% endif %}" 
+                         data-price="{{ v.price }}" data-mrp="{{ v.mrp }}" data-id="{{ v.id }}"
+                         onclick="vChange(this)">
+                        {{ v.size }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
 
-  {% if product.images.exists %}
-    <button class="arrow left" id="prevBtn">‹</button>
-  {% endif %}
+            <!-- ADD BUTTON -->
+            <button class="add-btn" id="cartBtn" onclick="ajaxAdd()">Add To Bag</button>
 
-<img src="{{ product.image.url }}"
-     class="main-img"
-     id="mainImg"
-     data-product-image="{{ product.id }}">
+            <!-- QTY BOX -->
+            <div class="qty-box-interactive" id="qtyBox" style="display:none;">
+                <button class="qty-btn" onclick="updateQty(-1)">−</button>
+                <span id="qtyVal">1</span>
+                <button class="qty-btn" onclick="updateQty(1)">+</button>
+            </div>
 
-  {% if product.images.exists %}
-    <button class="arrow right" id="nextBtn">›</button>
-  {% endif %}
+            <div style="margin-top: 40px;">
+
+    <!-- DESCRIPTION -->
+    {% if product.description %}
+    <div style="margin-bottom: 20px;">
+        <span class="v-title">Description</span>
+        <p style="color: var(--muted); font-size: 0.95rem;">
+            {{ product.description }}
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- HIGHLIGHTS -->
+    {% if product.highlights %}
+    <div style="margin-bottom: 20px;">
+        <span class="v-title">Key Highlights</span>
+
+        <ul style="list-style: none; padding-left: 0; color: var(--muted); font-size: 0.9rem;">
+            {% for point in product.highlights.splitlines %}
+                {% if point %}
+                <li style="margin-bottom: 8px;">
+                    {{ point }}
+                </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- SHELF LIFE -->
+    <p style="font-weight: 700; font-size: 0.9rem;">
+        ⏳ Shelf Life: {{ product.shelf_life|default:"9 Months" }}
+    </p>
 
 </div>
+        </div>
+    </section>
 
-  <div class="thumbs" id="thumbs">
+    <section class="reviews-section">
+    <div class="review-summary">
+        <h2>Customer Stories</h2>
+        <div style="font-size: 3.5rem; font-weight: 800; margin: 5px 0; line-height: 1;">
+            {{ product.average_rating|floatformat:1 }}
+        </div>
+        
+        <div class="stars-outer">
+            <div class="stars-inner" style="width: {% widthratio product.average_rating 5 100 %}%"></div>
+        </div>
+        
+        <p style="color:var(--muted); font-size: 0.9rem; margin-top: 10px;">
+            Based on {{ product.review_count }} verified buyers.
+        </p>
+    </div>
 
-    <!-- main image as first thumb -->
-    <img src="{{ product.image.url }}" class="thumb active">
+    <div class="reviews-list">
+        {% for review in product.reviews.all %}
+        <div class="review-card" style="padding: 20px 0; border-bottom: 1px solid var(--border);">
+            <div class="rev-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <div class="rev-avatar" style="width: 35px; height: 35px; background: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                    {{ review.user.username|slice:":1"|upper }}
+                </div>
+                <div>
+                    <div class="rev-name" style="font-weight: 600;">{{ review.user.username }}</div>
+                    <div style="font-size: 0.7rem; color: var(--muted);">{{ review.created_at|date:"M d, Y" }}</div>
+                </div>
+            </div>
+            
+            <div class="stars-outer" style="font-size: 1rem;">
+                <div class="stars-inner" style="width: {% widthratio review.rating 5 100 %}%"></div>
+            </div>
+            
+            <p class="rev-text" style="margin-top: 10px;">{{ review.comment }}</p>
+        </div>
+        {% empty %}
+        <p style="color: var(--muted); margin: 20px 0;">No reviews yet.</p>
+        {% endfor %}
 
-    {% for img in product.images.all %}
-      <img src="{{ img.image.url }}" class="thumb">
-    {% endfor %}
-
-  </div>
-
+        {% if user.is_authenticated and has_purchased %}
+        <div class="review-form-card">
+            <h3 style="margin-top:0">Share your thoughts</h3>
+            <form action="{% url 'add_review' product.id %}" method="POST">
+                {% csrf_token %}
+                <div class="rating-slider-wrap">
+                    <span class="v-title" style="margin-bottom: 5px;">Your Rating:</span>
+                    <input type="range" name="rating" class="rating-slider" 
+                           min="1" max="5" step="0.1" value="5" 
+                           oninput="document.getElementById('rNum').innerText = parseFloat(this.value).toFixed(1)">
+                    <span class="rating-num-display" id="rNum">5.0</span>
+                </div>
+                <textarea name="comment" class="review-input" rows="4" placeholder="How was the taste and quality?" required></textarea>
+                <button type="submit" class="add-btn" style="padding: 12px 30px; width: auto;">Submit Review</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</section>
 </div>
-<!-- RIGHT -->
 
-<div class="product-info">
-
-<h1 data-product-name="{{ product.id }}">{{ product.name }}</h1>
-
-<div class="price"
-     data-product-price="{{ product.id }}"
-     data-price="{{ product.price }}">
-₹{{ product.price }}
-</div>
-
-{% comment %} <p class="gst">Inclusive of {{ product.gst_percentage }}% GST</p> {% endcomment %}
-
-{% comment %} <div class="stock">
-{% if product.stock > 0 %}
-In Stock ({{ product.stock }})
-{% else %}
-Out of Stock
-{% endif %}
-</div> {% endcomment %}
-
-<form class="add-to-cart-form">
+<form id="hForm" style="display:none;">
     {% csrf_token %}
     <input type="hidden" name="product_id" value="{{ product.id }}">
-
-    <div class="cart-control">
-
-      {% with cart_item=cart|get_item:product.id %}
-    {% if cart_item %}
-        <button type="button" class="add-btn" style="display:none;">Add</button>
-
-        <div class="qty-box" style="display:flex;">
-            <button type="button" class="minus">−</button>
-            <span class="qty">{{ cart_item.quantity }}</span>
-            <button type="button" class="plus">+</button>
-        </div>
-    {% else %}
-        <button type="button" class="add-btn">Add</button>
-
-        <div class="qty-box" style="display:none;">
-            <button type="button" class="minus">−</button>
-            <span class="qty">1</span>
-            <button type="button" class="plus">+</button>
-        </div>
-    {% endif %}
-{% endwith %}
-
-    </div>
+    <input type="hidden" name="variant_id" id="vId" value="{{ product.variants.first.id }}">
 </form>
+{% include "footer.html" %}
 
-<!-- HIGHLIGHTS -->
-
-<div class="section">
-<h3>Product Highlights</h3>
-<ul>
-{% if product.highlights %}
-{% for h in product.highlights.splitlines %}
-<li>{{ h }}</li>
-{% endfor %}
-{% else %}
-<li>No highlights available</li>
-{% endif %}
-</ul>
-</div>
-
-<!-- TABS -->
-
-<div class="tabs">
-<button class="tab active" onclick="tab('spec',this)">Specifications</button>
-<button class="tab" onclick="tab('desc',this)">Description</button>
-</div>
-
-<!-- SPECIFICATIONS -->
-
-<div id="spec" class="tab-content active">
-
-<div class="spec-grid">
-
-<span>Brand</span><span>{{ product.brand|default:"—" }}</span>
-
-<span>Category</span><span>{{ product.category.name }}</span>
-
-<span>Net Weight</span><span>{{ product.net_weight|default:"—" }}</span>
-
-<span>Shelf Life</span><span>{{ product.shelf_life|default:"—" }}</span>
-
-{% comment %} <span>GST</span><span>{{ product.gst_percentage }}%</span> {% endcomment %}
-
-</div>
-
-{% if product.variant_set.exists %}
-<h4>Variants</h4>
-<ul class="variants">
-{% for v in product.variant_set.all %}
-<li>{{ v.size }} – ₹{{ v.price }}</li>
-{% endfor %}
-</ul>
-{% endif %}
-
-</div>
-
-<!-- DESCRIPTION -->
-
-<div id="desc" class="tab-content">
-
-{% if product.description %}
-<p>{{ product.description }}</p>
-{% else %}
-<p>No description available.</p>
-{% endif %}
-
-{% if product.meta_description %}
-<p class="seo">{{ product.meta_description }}</p>
-{% endif %}
-
-</div>
-
-</div>
-
-</div>
-
-
-<!-- ================= FOOTER ================= -->
-<footer class="footer">
-
-<div class="footer-inner">
-
-<!-- BRAND -->
-
-<div class="footer-col brand">
-
-  <div class="brand-row">
-    <img src="{% static 'images/icons/logo.png' %}" alt="Subio Foods Logo" class="footer-logo">
-  </div>
-
-  <p class="brand-text">
-    Naturally grown millets & spices  from trusted farmers to healthy homes.
-  </p>
-
-  <div class="social">
-    <div>
-  <a href="#" style="display:inline-block;margin-right:12px;">
-    <img src="{% static 'images/facebook.png' %}" width="20">
-  </a>
-
-  <a href="#" style="display:inline-block;margin-right:12px;">
-    <img src="{% static 'images/instagram.png' %}" width="20">
-  </a>
-
-  <a href="#" style="display:inline-block;">
-    <img src="{% static 'images/twitter.png' %}" width="20">
-  </a>
-</div>
-</div>
-
-</div>
-
-<!-- COMPANY -->
-
-<div class="footer-col">
-  <h4>Company</h4>
-  <a href="{% url 'home' %}">About Us</a>
-  <a href="{% url 'products' %}">Products</a>
-  <a href="#contact">Contact</a>
-</div>
-
-<!-- SUPPORT -->
-
-<div class="footer-col">
-  <h4>Support</h4>
-  <a href="#">FAQs</a>
-  <a href="#">Shipping Policy</a>
-  <a href="#">Terms & Conditions</a>
-  <a href="#">Privacy Policy</a>
-</div>
-
-<!-- NEWSLETTER -->
-
-<div class="footer-col offers">
-
-<h4>Get Exclusive Offers</h4>
-
-<form class="offer-form" id="newsletterForm"
-      data-url="{% url 'newsletter' %}"
-      method="post">
-
-{% csrf_token %}
-
-<input type="email"
-       id="newsletterEmail"
-       name="email"
-       placeholder="Enter your email"
-       required>
-
-<button type="submit">Subscribe</button>
-
-</form>
-
-<p id="newsletterMsg"></p>
-
-<div class="contact">
-<p><strong>Contact</strong></p>
-<p>subiofoods@gmail.com</p>
-<p>+91 96068 23003</p>
-</div>
-
-</div>
-
-</div>
-
-<div class="footer-bottom">
-<p>© 2026 Subio Foods. All rights reserved.</p>
-</div>
-
-</footer>
-
-<!-- LOGOUT MODAL -->
 <div id="logoutModal" class="logout-modal">
-
-  <div class="logout-box">
-    <h3>Logout?</h3>
-    <p>Are you sure you want to logout?</p>
-
-    <div class="logout-actions">
-      <button id="cancelLogout">Cancel</button>
-      <button id="confirmLogout">Logout</button>
+    <div class="logout-box">
+        <h3>Logout?</h3>
+        <p>Are you sure you want to logout?</p>
+        <div class="logout-actions">
+            <button id="cancelLogout">Cancel</button>
+            <button id="confirmLogout">Logout</button>
+        </div>
     </div>
-  </div>
-
 </div>
 
-<form id="logoutForm" method="POST" action="{% url 'logout' %}">
+<form id="logoutForm" method="POST" action="{% url 'logout' %}" style="display:none;">
     {% csrf_token %}
 </form>
 
 {% include "cart_drawer.html" %}
-
 <script src="{% static 'js/navbar.js' %}"></script>
-<script src="{% static 'js/scroll.js' %}"></script>
-<script src="{% static 'js/shop.js' %}"></script>
-<script src="{% static 'js/cart.js' %}"></script>
-
-
 <script>
-const UPDATE_CART_URL = "{% url 'update_cart' %}";
 
-const mainImg = document.getElementById("mainImg");
-const slider = document.getElementById("slider");
-const thumbs = document.querySelectorAll(".thumb");
+// ==========================================
+// SUBIO FOODS - PRODUCT PAGE LOGIC
+// ==========================================
 
-let current = 0;
+let currentIndex = 0;
+let currentQty = 0;
+let isUpdating = false; // Prevents double-click spam
 
-/* INIT */
+// ================= SYNC UTILS =================
 
-thumbs.forEach((t,i)=>{
-  t.onclick = ()=>setImg(i);
-});
+/**
+ * Updates Global UI components like Navbar count and Cart Drawer
+ */
+function refreshGlobalCart(data) {
+    if (!data) return;
 
-/* SET IMAGE */
+    // ✅ Update navbar
+    const cartCountEl = document.getElementById('cartCount');
+    if (cartCountEl) {
+        cartCountEl.innerText = data.cart_count || 0;
+    }
 
-function setImg(i){
-  current = i;
-  mainImg.src = thumbs[i].src;
-
-  thumbs.forEach(t=>t.classList.remove("active"));
-  thumbs[i].classList.add("active");
+    // ✅ Update drawer instantly
+    if (typeof renderDrawer === "function") {
+        renderDrawer(data);
+    }
 }
 
-/* ARROWS */
-
-function nextImg(){
-  current = (current + 1) % thumbs.length;
-  setImg(current);
+/**
+ * Safely fetches the CSRF token from the DOM
+ */
+function getCSRFToken() {
+    const token = document.querySelector('[name=csrfmiddlewaretoken]');
+    return token ? token.value : "";
 }
 
-function prevImg(){
-  current = (current - 1 + thumbs.length) % thumbs.length;
-  setImg(current);
-}
+// ================= IMAGE GALLERY =================
 
-/* MOBILE SWIPE */
+function sync(el) {
+    const thumbs = document.querySelectorAll('.thumb-circle');
+    const mainImg = document.getElementById('mView');
 
-let startX = 0;
+    if (!mainImg || !el) return;
 
-slider.addEventListener("touchstart",e=>{
-  startX = e.touches[0].clientX;
-});
-
-slider.addEventListener("touchend",e=>{
-  let endX = e.changedTouches[0].clientX;
-  if(startX - endX > 40) nextImg();
-  if(endX - startX > 40) prevImg();
-});
-
-/* TABS */
-
-function tab(id,btn){
-  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-  document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
-  btn.classList.add("active");
-  document.getElementById(id).classList.add("active");
-}
-
-const prevBtn = document.getElementById("prevBtn");
-const nextBtn = document.getElementById("nextBtn");
-
-if(prevBtn) {
-  prevBtn.addEventListener("click", prevImg);
-}
-
-if(nextBtn) {
-  nextBtn.addEventListener("click", nextImg);
-}
-
-
-
-function showPopup(message){
-
-    const popup = document.createElement("div");
-    popup.innerText = message;
-    popup.style.position = "fixed";
-    popup.style.bottom = "30px";
-    popup.style.right = "30px";
-    popup.style.background = "#2e7d32";
-    popup.style.color = "white";
-    popup.style.padding = "12px 20px";
-    popup.style.borderRadius = "8px";
-    popup.style.boxShadow = "0 5px 15px rgba(0,0,0,0.2)";
-    popup.style.zIndex = "9999";
-
-    document.body.appendChild(popup);
+    // Fade out
+    mainImg.style.opacity = '0';
 
     setTimeout(() => {
-        popup.remove();
-    }, 2000);
+        const newSrc = el.querySelector('img').src;
+        mainImg.src = newSrc;
+        mainImg.style.opacity = '1';
+    }, 150);
+
+    thumbs.forEach((c, index) => {
+        c.classList.remove('active');
+        if (c === el) currentIndex = index;
+    });
+
+    el.classList.add('active');
 }
 
+function moveGallery(step) {
+    const thumbs = document.querySelectorAll('.thumb-circle');
+    if (thumbs.length === 0) return;
+
+    currentIndex += step;
+    if (currentIndex >= thumbs.length) currentIndex = 0;
+    if (currentIndex < 0) currentIndex = thumbs.length - 1;
+
+    sync(thumbs[currentIndex]);
+}
+
+// ================= VARIANT LOGIC =================
+
+async function vChange(el) {
+
+    // UI active state
+    document.querySelectorAll('.v-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+
+    // Data
+    const price = parseFloat(el.dataset.price);
+    const mrp = parseFloat(el.dataset.mrp);
+    const variantId = el.dataset.id;
+
+    document.getElementById('dPrice').innerText = "₹" + price.toFixed(2);
+    document.getElementById('dMrp').innerText = "₹" + mrp.toFixed(2);
+    document.getElementById('vId').value = variantId;
+
+    // Discount
+    if (mrp > price) {
+        const discount = Math.round(((mrp - price) / mrp) * 100);
+        document.getElementById('dSave').innerText = discount + "% OFF";
+        document.getElementById('dSave').style.display = "inline-block";
+    } else {
+        document.getElementById('dSave').style.display = "none";
+    }
+
+    // 🔥 IMPORTANT FIX → LOAD CORRECT QTY FOR SELECTED VARIANT
+    await loadInitialQty();
+}
+
+// ================= UI STATE TOGGLE =================
+
+function toggleCartUI(qty) {
+    const btn = document.getElementById('cartBtn');
+    const qtyBox = document.getElementById('qtyBox');
+    const valSpan = document.getElementById('qtyVal');
+
+    if (qty > 0) {
+        valSpan.innerText = qty;
+        btn.style.display = "none";
+        qtyBox.style.display = "flex";
+        // Force reflow for animation
+        requestAnimationFrame(() => {
+            qtyBox.classList.add("show");
+            btn.classList.add("hide");
+        });
+    } else {
+        qtyBox.classList.remove("show");
+        btn.classList.remove("hide");
+        setTimeout(() => {
+            qtyBox.style.display = "none";
+            btn.style.display = "block";
+        }, 150);
+    }
+}
+
+// ================= CART ACTIONS =================
+
+function ajaxAdd() {
+    if (isUpdating) return;
+    isUpdating = true;
+
+    const formData = new FormData(document.getElementById("hForm"));
+    formData.append("action", "add");
+
+    fetch("/update-cart/", {
+        method: "POST",
+        headers: { 'X-CSRFToken': getCSRFToken() },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        refreshGlobalCart(data);
+
+        const productId = document.querySelector('[name="product_id"]').value;
+        const variantId = document.getElementById('vId').value;
+        formData.set("variant_id", variantId); // 🔥 FORCE CORRECT VARIANT
+        const item = data.items.find(i =>
+            String(i.product_id) === String(productId) &&
+            String(i.variant_id) === String(variantId)
+        );
+
+        currentQty = item ? item.quantity : 0;
+        toggleCartUI(currentQty);
+
+    })
+    .finally(() => isUpdating = false);
+}
+
+async function updateQty(change) {
+
+    if (isUpdating) return;
+    isUpdating = true;
+
+    const variantId = document.getElementById('vId').value;
+    const productId = document.querySelector('[name="product_id"]').value;
+
+    // 🔥 INSTANT UI UPDATE
+    let newQty = currentQty + change;
+    if (newQty < 0) newQty = 0;
+
+    currentQty = newQty;
+    toggleCartUI(currentQty);
+
+    // 🔥 FIXED ACTION LOGIC
+    let action;
+    if (change === 1) {
+        action = currentQty === 1 ? "add" : "increase";
+    } else {
+        action = "decrease";
+    }
+
+    const formData = new FormData();
+    formData.append("product_id", productId);
+    formData.append("variant_id", variantId);
+    formData.append("action", action);
+
+    try {
+        const res = await fetch("/update-cart/", {
+            method: "POST",
+            headers: { 'X-CSRFToken': getCSRFToken() },
+            body: formData
+        });
+
+        const data = await res.json();
+
+        refreshGlobalCart(data);
+
+        const item = data.items.find(i =>
+            String(i.product_id) === String(productId) &&
+            String(i.variant_id) === String(variantId)
+        );
+
+        currentQty = item ? item.quantity : 0;
+
+        // 🔥 FINAL SYNC
+        toggleCartUI(currentQty);
+
+    } catch (err) {
+        console.error(err);
+    } finally {
+        isUpdating = false;
+    }
+}
+// ================= INITIAL LOAD =================
+
+/**
+ * Fetches current cart state and syncs the product page UI
+ */
+async function loadInitialQty() {
+
+    const variantId = document.getElementById('vId').value;
+    const productId = document.querySelector('[name="product_id"]').value;
+
+    try {
+        const res = await fetch("/cart-json/");
+        const data = await res.json();
+
+        const item = data.items.find(i =>
+            String(i.product_id) === String(productId) &&
+            String(i.variant_id) === String(variantId)
+        );
+
+        currentQty = item ? item.quantity : 0;
+
+        toggleCartUI(currentQty);
+
+    } catch (err) {
+        console.error("Variant sync error:", err);
+    }
+}
+// ================= INIT =================
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadInitialQty();   // 🔥 THIS LINE FIXES YOUR ISSUE
+});
+
 </script>
+
+</body>
+</html>

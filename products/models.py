@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
 from django.utils import timezone
+from django.db.models import Avg
 import uuid
 
 
@@ -31,40 +32,21 @@ class Category(models.Model):
 
 
 # ================= PRODUCT =================
-
 class Product(models.Model):
-
     category = models.ForeignKey(
-        Category,
-        on_delete=models.CASCADE,
+        Category, 
+        on_delete=models.CASCADE, 
         related_name="products"
     )
-
     name = models.CharField(max_length=200)
-
     description = models.TextField(blank=True)
-
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-
     image = models.ImageField(upload_to="products/")
 
     # PRODUCT DETAILS
-
     highlights = models.TextField(blank=True)
-
-    brand = models.CharField(max_length=100, blank=True)
-
     shelf_life = models.CharField(max_length=100, blank=True)
 
-    net_weight = models.CharField(max_length=100, blank=True)
-
-    gst_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-
-    # SEO
-
-    meta_title = models.CharField(max_length=200, blank=True)
-
-    meta_description = models.TextField(blank=True)
+    # SEO fields removed here
 
     created = models.DateTimeField(auto_now_add=True)
 
@@ -72,9 +54,19 @@ class Product(models.Model):
         ordering = ["-created"]
         indexes = [
             models.Index(fields=["category"]),
-            models.Index(fields=["price"]),
+            # models.Index(fields=["price"]), <-- REMOVED index
         ]
 
+    @property
+    def average_rating(self):
+        avg_data = self.reviews.aggregate(Avg('rating'))['rating__avg']
+        return float(avg_data) if avg_data is not None else 0.0
+    
+    @property
+    def review_count(self):
+        """Returns the total number of reviews for this product"""
+        return self.reviews.count()
+    
     def __str__(self):
         return self.name
 
@@ -274,15 +266,50 @@ class OrderItem(models.Model):
         on_delete=models.CASCADE
     )
 
+    # ✅ ADD THIS
+    variant = models.ForeignKey(
+        "ProductVariant",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
     quantity = models.PositiveIntegerField()
 
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    
+
+class ProductVariant(models.Model):
+    product = models.ForeignKey(
+        Product,
+        related_name="variants",
+        on_delete=models.CASCADE
+    )
+
+    size = models.CharField(max_length=50)   # 500g, 1kg
+    mrp = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    stock = models.PositiveIntegerField(default=0)
+
+    @property
+    def discount_percentage(self):
+        if self.mrp and self.price and self.mrp > self.price:
+            discount = ((self.mrp - self.price) / self.mrp) * 100
+            return int(discount)
+        return 0
+    
+    def __str__(self):
+        return f"{self.product.name} - {self.size}"
+
+class Review(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    rating = models.FloatField()  # Changed from Integer to Float
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        indexes = [
-            models.Index(fields=["order"]),
-            models.Index(fields=["product"]),
-        ]
+        ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.product.name} x {self.quantity}"
+        return f"{self.user.username} - {self.product.name} ({self.rating}★)"

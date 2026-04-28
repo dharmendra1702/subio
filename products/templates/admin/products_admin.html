@@ -1,65 +1,109 @@
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/admin/admin_products.css' %}">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products Admin - Subio Foods</title>
+    <link rel="stylesheet" href="{% static 'css/admin/admin_products.css' %}">
+</head>
+<body>
 
 <div class="layout">
 
-<!-- SIDEBAR -->
+    <!-- SIDEBAR -->
+    <aside>
+        <div class="sidebar-header">
+            <h3>Categories</h3>
+        </div>
+        <nav>
+            <a href="?" class="{% if not active_category %}active{% endif %}">
+                All Products
+            </a>
 
-<aside>
+            {% for c in categories %}
+            <a href="?category={{ c.id }}"
+               class="{% if active_category == c.id|stringformat:'s' %}active{% endif %}">
+                {{ c.name }}
+            </a>
+            {% endfor %}
+        </nav>
+    </aside>
 
-<h3>Categories</h3>
+    <!-- MAIN -->
+    <main>
 
-<a href="?" class="{% if not active_category %}active{% endif %}">All Products</a>
+        <a href="javascript:history.back()" class="back-btn">← Back</a>
 
-{% for c in categories %}
-<a href="?category={{ c.id }}" class="{% if active_category == c.id|stringformat:'s' %}active{% endif %}">
-{{ c.name }}
-</a>
-{% endfor %}
+        <header>
+            <div class="title-group">
+                <h2>Products</h2>
+                <p>{{ products|length }} items found</p>
+            </div>
 
-</aside>
+            <a href="{% url 'add_product' %}" class="add-btn">
+                + Add New Product
+            </a>
+        </header>
 
-<!-- MAIN -->
+        <div class="products-grid">
 
-<main>
-<a href="javascript:history.back()" class="back-btn">← Back</a>
-<header>
-<h2>Products</h2>
-<a href="{% url 'add_product' %}" class="add">Add Product</a>
-</header>
+            {% for p in products %}
+            <div class="product-card">
 
-<div class="products">
+                <!-- IMAGE -->
+                <div class="image-wrapper">
+                    <img src="{{ p.image.url }}" alt="{{ p.name }}">
 
-{% for p in products %}
+                    <div class="card-overlay">
+                        <div class="actions">
+                            <a href="{% url 'edit_product' p.id %}" class="edit">Edit</a>
+                            <a href="{% url 'delete_product' p.id %}"
+                               class="delete"
+                               onclick="return confirm('Delete this product?')">
+                               Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-<div class="product">
+                <!-- DETAILS -->
+                <div class="details">
 
-<img src="{{ p.image.url }}">
+                    <h4>{{ p.name }}</h4>
+                    <p class="category-tag">{{ p.category.name }}</p>
 
-<div class="details">
+                    {% with v=p.variants.first %}
+                    <div class="stats-row">
 
-<h4>{{ p.name }}</h4>
+                        {% if v %}
+                            <span class="price">₹{{ v.price }}</span>
 
-<div class="row">
-<span>₹{{ p.price }}</span>
-<span class="stock {% if p.stock < 5 %}low{% endif %}">
-{{ p.stock }} left
-</span>
+                            <span class="mrp">
+                                ₹{{ v.mrp }}
+                            </span>
+
+                        {% else %}
+                            <span class="price">₹0</span>
+                        {% endif %}
+
+                    </div>
+                    {% endwith %}
+
+                </div>
+
+            </div>
+
+            {% empty %}
+            <div class="empty-state">
+                <p>No products found in this category.</p>
+            </div>
+            {% endfor %}
+
+        </div>
+
+    </main>
 </div>
 
-<div class="actions">
-<a href="{% url 'edit_product' p.id %}">Edit</a>
-<a href="{% url 'delete_product' p.id %}">Delete</a>
-</div>
-
-</div>
-
-</div>
-
-{% endfor %}
-
-</div>
-
-</main>
-
-</div>
+</body>
+</html>

@@ -1,22 +1,18 @@
 {% load cart_tags %}
 {% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/user_products.css' %}">
-<link rel="stylesheet" href="{% static 'css/header_footer.css' %}">
-<link rel="stylesheet" href="{% static 'css/cart_drawer.css' %}">
-
-<title>Subio Foods - Products</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/user_products.css' %}">
+    <link rel="stylesheet" href="{% static 'css/header_footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cart_drawer.css' %}">
+    <title>Subio Foods - Products</title>
 </head>
 
 <body>
-
-
 <header class="navbar">
 
   <!-- LEFT -->
@@ -128,310 +124,191 @@ Cart (<span id="cartCount">{{ cart_count|default:"0" }}</span>)
 </header>
 
 <section class="shop">
-
-<h1>Our Products</h1>
-<p class="subtitle">Premium nutrition crafted with care</p>
-
-<!-- ================= CATEGORY SLIDER ================= -->
-
-<div class="category-slider">
-
-  <!-- ALL -->
-  <div class="cat-circle {% if active_category == 'all' %}active{% endif %}">
-    <a href="{% url 'products' %}">
-      <img src="{% static 'images/all.png' %}">
-      <span>All</span>
-      <div class="underline"></div>
-    </a>
-  </div>
-
-  {% for c in categories %}
-  <div class="cat-circle {% if active_category == c.slug %}active{% endif %}">
-    <a href="{% url 'products_by_category' c.slug %}">
-
-      {% if c.image %}
-        <img src="{{ c.image.url }}">
-      {% else %}
-        <img src="{% static 'images/all.png' %}">
-      {% endif %}
-
-      <span>{{ c.name }}</span>
-      <div class="underline"></div>
-    </a>
-  </div>
-  {% endfor %}
-
-</div>
-
-<!-- ================= FILTER | SEARCH | SORT ================= -->
-
-<div class="filter-panel">
-
-  <div class="filter-dropdown">
-    <button class="filter-btn" onclick="toggleFilters()">
-      Filters ▾
-    </button>
-
-    <div class="filter-menu" id="filterBox">
-
-      <div class="filter-item">
-        <label>Max Price (₹)</label>
-        <input type="range" min="0" max="2000" value="2000"
-               oninput="filterPrice(this.value)">
-        <span id="priceVal">2000</span>
-      </div>
-
-      <div class="filter-item">
-        <label>
-          <input type="checkbox" onchange="filterStock(this)">
-          In Stock
-        </label>
-      </div>
-
-      <div class="filter-item">
-        <label>Net Weight</label>
-        <select onchange="filterWeight(this.value)">
-          <option value="">Select</option>
-          <option value="250">250g+</option>
-          <option value="500">500g+</option>
-          <option value="1000">1kg+</option>
-        </select>
-      </div>
-
-      <button class="clear-btn" onclick="clearFilters()">Clear Filters</button>
-
+    <div class="shop-header">
+        <h1>Our Products</h1>
+        <p class="subtitle">Premium nutrition crafted with care</p>
     </div>
-  </div>
 
-  <input id="search" placeholder="Search products…" onkeyup="searchProducts()">
+    <div class="category-slider">
+        <div class="cat-circle {% if active_category == 'all' %}active{% endif %}">
+            <a href="{% url 'products' %}">
+                <img src="{% static 'images/all.png' %}" alt="All">
+                <span>All</span>
+                <div class="underline"></div>
+            </a>
+        </div>
+        {% for c in categories %}
+        <div class="cat-circle {% if active_category == c.slug %}active{% endif %}">
+            <a href="{% url 'products_by_category' c.slug %}">
+                <img src="{% if c.image %}{{ c.image.url }}{% else %}{% static 'images/all.png' %}{% endif %}" alt="{{ c.name }}">
+                <span>{{ c.name }}</span>
+                <div class="underline"></div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
 
-  <select onchange="sortProducts(this.value)" class="sort-select">
-    <option value="">Sort by</option>
-    <option value="relevance">Relevance</option>
-    <option value="low">Price Low → High</option>
-    <option value="high">Price High → Low</option>
-    <option value="name">Name A → Z</option>
-  </select>
+    <div class="filter-panel">
+        <div class="filter-dropdown">
+            <button class="filter-btn" onclick="toggleFilters()">Filters ▾</button>
+            <div class="filter-menu" id="filterBox">
+                <div class="filter-item">
+                    <label>Max Price (₹ <span id="priceVal">2000</span>)</label>
+                    <input type="range" min="0" max="2000" value="2000" oninput="filterPrice(this.value)">
+                </div>
+                <div class="filter-item">
+                    <label><input type="checkbox" onchange="filterStock(this)"> In Stock Only</label>
+                </div>
+                <button class="clear-btn" onclick="clearFilters()">Clear Filters</button>
+            </div>
+        </div>
+        <input id="search" placeholder="Search products…" onkeyup="searchProducts()">
+        <select onchange="sortProducts(this.value)" class="sort-select">
+            <option value="">Sort by</option>
+            <option value="low">Price: Low to High</option>
+            <option value="high">Price: High to Low</option>
+            <option value="name">Name: A to Z</option>
+        </select>
+    </div>
 
-</div>
-<!-- ================= PRODUCTS GRID ================= -->
-
-<div class="products" id="grid">
-
+    <div class="products" id="grid">
 {% for p in products %}
+{% with v=p.variants.first %}
 
-<div class="card"
-data-name="{{ p.name|lower }}"
-data-price="{{ p.price }}"
-data-cat="{{ p.category.id }}"
-data-weight="{{ p.net_weight|default:'' }}"
-data-stock="{{ p.stock }}">
+<div class="card fk-card" data-name="{{ p.name|lower }}">
 
-<span class="heart" onclick="wish(this)">♡</span>
-
-<a href="{% url 'product_detail' p.id %}">
-{% if p.image %}
-<img src="{{ p.image.url }}" loading="lazy" data-product-image="{{ p.id }}">
-{% else %}
-<img src="{% static 'images/all.png' %}" loading="lazy">
-{% endif %}
+    <a href="{% url 'product_detail' p.id %}" class="img-link">
+    <div class="img-box">
+        <img 
+            src="{% if p.image %}{{ p.image.url }}{% else %}{% static 'images/all.png' %}{% endif %}" 
+            loading="lazy">
+    </div>
 </a>
 
-<div class="card-body">
+    <div class="card-body">
 
-<h3 data-product-name="{{ p.id }}">{{ p.name }}</h3>
+        <h3 class="product-title">{{ p.name }}</h3>
 
-<p data-product-price="{{ p.id }}">{{ p.price }}</p>
-
-<div class="buttons">
-
-<a href="{% url 'product_detail' p.id %}" class="view">View</a>
-
-<form class="add-to-cart-form">
-    {% csrf_token %}
-    <input type="hidden" name="product_id" value="{{ p.id }}">
-
-    <div class="cart-control">
-
-       {% with cart_item=cart|get_item:p.id %}
-    {% if cart_item %}
-        <button type="button" class="add-btn" style="display:none;">Add</button>
-
-        <div class="qty-box" style="display:flex;">
-            <button type="button" class="minus">−</button>
-            <span class="qty">{{ cart_item.quantity }}</span>
-            <button type="button" class="plus">+</button>
+        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+            <div class="rating-pill">
+                {{ p.average_rating|floatformat:1 }} ★
+            </div>
+            <span style="color: #878787; font-size: 0.85rem; margin-left: 6px;">
+                ({{ p.review_count }})
+            </span>
         </div>
-    {% else %}
-        <button type="button" class="add-btn">Add</button>
 
-        <div class="qty-box" style="display:none;">
-            <button type="button" class="minus">−</button>
-            <span class="qty">1</span>
-            <button type="button" class="plus">+</button>
+        <div class="price-box-fk">
+            <span class="price-now">₹{{ v.price|floatformat:0 }}</span>
+            {% if v.mrp > v.price %}
+                <span class="price-old">₹{{ v.mrp|floatformat:0 }}</span>
+                <span class="discount-text-fk">{{ v.discount_percentage }}% off</span>
+            {% endif %}
         </div>
-    {% endif %}
-{% endwith %}
+
+        <div class="variants-tags">
+            {% for var in p.variants.all %}
+                <span class="v-tag">{{ var.size }}</span>
+            {% endfor %}
+        </div>
+
+        <!-- FOOTER -->
+        <div class="card-footer">
+
+            <a href="{% url 'product_detail' p.id %}" class="view-btn">
+                View
+            </a>
+
+            <div class="cart-control-wrapper">
+
+                <!-- ADD BUTTON -->
+                <button 
+                    class="add-btn" 
+                    id="add-btn-{{ p.id }}-{{ v.id }}"
+                    onclick="updateCartQty('{{ p.id }}', '{{ v.id }}', 1)">
+                    Add
+                </button>
+
+                <!-- QTY BOX -->
+                <div class="qty-box-interactive" 
+                     id="qty-box-{{ p.id }}-{{ v.id }}" 
+                     style="display:none;">
+
+                    <button class="qty-btn"
+                        onclick="updateCartQty('{{ p.id }}', '{{ v.id }}', -1)">−</button>
+
+                    <span id="qty-val-{{ p.id }}-{{ v.id }}">0</span>
+
+                    <button class="qty-btn"
+                        onclick="updateCartQty('{{ p.id }}', '{{ v.id }}', 1)">+</button>
+
+                </div>
+
+            </div>
+
+        </div>
 
     </div>
-</form>
 
 </div>
 
-</div>
-</div>
-
+{% endwith %}
 {% endfor %}
-
 </div>
 
 </section>
 
-<!-- ================= FOOTER ================= -->
-<footer class="footer">
+{% include "footer.html" %}
 
-<div class="footer-inner">
-
-<!-- BRAND -->
-
-<div class="footer-col brand">
-
-  <div class="brand-row">
-    <img src="{% static 'images/icons/logo.png' %}" alt="Subio Foods Logo" class="footer-logo">
-  </div>
-
-  <p class="brand-text">
-    Naturally grown millets & spices  from trusted farmers to healthy homes.
-  </p>
-
-  <div class="social">
-    <div>
-  <a href="#" style="display:inline-block;margin-right:12px;">
-    <img src="{% static 'images/facebook.png' %}" width="20">
-  </a>
-
-  <a href="#" style="display:inline-block;margin-right:12px;">
-    <img src="{% static 'images/instagram.png' %}" width="20">
-  </a>
-
-  <a href="#" style="display:inline-block;">
-    <img src="{% static 'images/twitter.png' %}" width="20">
-  </a>
-</div>
-</div>
-
-</div>
-
-<!-- COMPANY -->
-
-<div class="footer-col">
-  <h4>Company</h4>
-  <a href="{% url 'home' %}">About Us</a>
-  <a href="{% url 'products' %}">Products</a>
-  <a href="#contact">Contact</a>
-</div>
-
-<!-- SUPPORT -->
-
-<div class="footer-col">
-  <h4>Support</h4>
-  <a href="#">FAQs</a>
-  <a href="#">Shipping Policy</a>
-  <a href="#">Terms & Conditions</a>
-  <a href="#">Privacy Policy</a>
-</div>
-
-<!-- NEWSLETTER -->
-
-<div class="footer-col offers">
-
-<h4>Get Exclusive Offers</h4>
-
-<form class="offer-form" id="newsletterForm"
-      data-url="{% url 'newsletter' %}"
-      method="post">
-
-{% csrf_token %}
-
-<input type="email"
-       id="newsletterEmail"
-       name="email"
-       placeholder="Enter your email"
-       required>
-
-<button type="submit">Subscribe</button>
-
-</form>
-
-<p id="newsletterMsg"></p>
-
-<div class="contact">
-<p><strong>Contact</strong></p>
-<p>subiofoods@gmail.com</p>
-<p>+91 96068 23003</p>
-</div>
-
-</div>
-
-</div>
-
-<div class="footer-bottom">
-<p>© 2026 Subio Foods. All rights reserved.</p>
-</div>
-
-</footer>
-
-<!-- LOGOUT MODAL -->
 <div id="logoutModal" class="logout-modal">
-
-  <div class="logout-box">
-    <h3>Logout?</h3>
-    <p>Are you sure you want to logout?</p>
-
-    <div class="logout-actions">
-      <button id="cancelLogout">Cancel</button>
-      <button id="confirmLogout">Logout</button>
+    <div class="logout-box">
+        <h3>Logout?</h3>
+        <p>Are you sure you want to logout?</p>
+        <div class="logout-actions">
+            <button id="cancelLogout">Cancel</button>
+            <button id="confirmLogout">Logout</button>
+        </div>
     </div>
-  </div>
-
 </div>
 
-<form id="logoutForm" method="POST" action="{% url 'logout' %}">
+<form id="logoutForm" method="POST" action="{% url 'logout' %}" style="display:none;">
     {% csrf_token %}
 </form>
 
-
 {% include "cart_drawer.html" %}
-<script src="{% static 'js/navbar.js' %}"></script>
-<script src="{% static 'js/scroll.js' %}"></script>
-<script src="{% static 'js/shop.js' %}"></script>
-<script src="{% static 'js/cart.js' %}"></script>
 
+<script src="{% static 'js/navbar.js' %}"></script>
+<script src="{% static 'js/shop.js' %}"></script>
 
 <script>
-const UPDATE_CART_URL = "{% url 'update_cart' %}";
+    const UPDATE_CART_URL = "{% url 'update_cart' %}";
+    function filterPrice(val) { document.getElementById('priceVal').innerText = val; }
+    function showPopup(message){
+        const popup = document.createElement("div");
+        popup.className = "toast-message";
+        popup.innerText = message;
+        document.body.appendChild(popup);
+        setTimeout(() => popup.remove(), 2500);
+    }
 
-function showPopup(message){
+    function quickAdd(prodId, varId) {
+    const formData = new FormData();
+    formData.append('product_id', prodId);
+    formData.append('variant_id', varId);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
-    const popup = document.createElement("div");
-    popup.innerText = message;
-    popup.style.position = "fixed";
-    popup.style.bottom = "30px";
-    popup.style.right = "30px";
-    popup.style.background = "#2e7d32";
-    popup.style.color = "white";
-    popup.style.padding = "12px 20px";
-    popup.style.borderRadius = "8px";
-    popup.style.boxShadow = "0 5px 15px rgba(0,0,0,0.2)";
-    popup.style.zIndex = "9999";
-
-    document.body.appendChild(popup);
-
-    setTimeout(() => {
-        popup.remove();
-    }, 2000);
+    fetch("{% url 'update_cart' %}", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === "success") {
+            document.getElementById('cartCount').innerText = data.cart_count;
+            if (typeof openCart === "function") openCart();
+        }
+    });
 }
 </script>
-
 </body>
 </html>

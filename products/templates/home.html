@@ -251,7 +251,7 @@ Cart (<span id="cartCount">{{ cart_count|default:"0" }}</span>)
     <div class="alt-content">
       <h3>Health Mix</h3>
       <p>Nutrient-packed blends designed for balanced family nutrition.</p>
-      <a href="{% url 'products_by_category' 'health-mix' %}" class="alt-btn">
+      <a href="{% url 'products_by_category' 'healthmix' %}" class="alt-btn">
   Shop Now
 </a>
     </div>
@@ -565,6 +565,7 @@ Cart (<span id="cartCount">{{ cart_count|default:"0" }}</span>)
 <script src="{% static 'js/navbar.js' %}"></script>
 <script src="{% static 'js/mail.js' %}"></script>
 <script src="{% static 'js/cart.js' %}"></script>
+<script src="{% static 'js/shop.js' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 </html>

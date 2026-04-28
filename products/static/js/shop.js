@@ -1,168 +1,167 @@
-document.addEventListener("DOMContentLoaded", function () {
+/* ================= CSRF ================= */
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 
-  const grid = document.getElementById('grid');
-  const searchInput = document.getElementById('search');
+/* ================= UPDATE CART ================= */
+function updateCartQty(productId, variantId, change){
 
-  let activeCategory = "all";
-  let maxPrice = Infinity;
-  let minWeight = "";
-  let inStock = false;
+    const qtyBox = document.getElementById(`qty-box-${productId}-${variantId}`)
+    const addBtn = document.getElementById(`add-btn-${productId}-${variantId}`)
+    const qtyVal = document.getElementById(`qty-val-${productId}-${variantId}`)
 
-  function getCards() {
-    return document.querySelectorAll('.card');
-  }
+    let currentQty = parseInt(qtyVal?.innerText || "0")
+    let newQty = currentQty + change
 
-  function extractWeight(weightText) {
-    const match = weightText.match(/\d+/);
-    return match ? parseInt(match[0]) : 0;
-  }
+    if(newQty < 0) newQty = 0
 
-  function applyFilters() {
+    /* ===== UI UPDATE (INSTANT) ===== */
+    if(qtyBox && addBtn && qtyVal){
+        if(newQty > 0){
+            qtyBox.style.display = "flex"
+            addBtn.style.display = "none"
+            qtyVal.innerText = newQty
+        }else{
+            qtyBox.style.display = "none"
+            addBtn.style.display = "block"
+            qtyVal.innerText = 0
+        }
+    }
 
-    const cards = getCards();
+    /* ===== BACKEND SYNC (SAFE FORMAT) ===== */
+    let action = "add"
+    if(change > 0 && currentQty > 0) action = "increase"
+    if(change < 0) action = "decrease"
+
+    fetch("/update-cart/", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: new URLSearchParams({
+            product_id: productId,
+            variant_id: variantId,
+            action: action
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        /* ===== TRUST BACKEND ===== */
+        if (typeof renderDrawer === "function") {
+            renderDrawer(data)
+        }
+
+        /* ===== NAVBAR ===== */
+        const cartCount = document.getElementById("cartCount")
+        if(cartCount){
+            cartCount.innerText = data.cart_count || 0
+        }
+
+        /* ===== FIX UI BASED ON SERVER ===== */
+        const item = data.items.find(i =>
+            String(i.product_id) === String(productId) &&
+            String(i.variant_id) === String(variantId)
+        )
+
+        if(qtyBox && addBtn && qtyVal){
+            if(item){
+                qtyBox.style.display = "flex"
+                addBtn.style.display = "none"
+                qtyVal.innerText = item.quantity
+            } else {
+                qtyBox.style.display = "none"
+                addBtn.style.display = "block"
+                qtyVal.innerText = 0
+            }
+        }
+    })
+    .catch(err => {
+        console.error("Cart update failed:", err)
+
+        // ❗ rollback UI
+        location.reload()
+    })
+}
+
+/* ================= INITIAL LOAD ================= */
+document.addEventListener("DOMContentLoaded", () => {
+
+    fetch("/cart-json/")
+    .then(res => res.json())
+    .then(data => {
+
+        /* ===== DRAWER ===== */
+        if (typeof renderDrawer === "function") {
+            renderDrawer(data)
+        }
+
+        /* ===== NAVBAR ===== */
+        const cartCount = document.getElementById("cartCount")
+        if(cartCount){
+            cartCount.innerText = data.cart_count || 0
+        }
+
+        /* ===== PRODUCT GRID SYNC ===== */
+        data.items.forEach(item => {
+
+            const productId = item.product_id
+            const variantId = item.variant_id
+
+            const qtyBox = document.getElementById(`qty-box-${productId}-${variantId}`)
+            const addBtn = document.getElementById(`add-btn-${productId}-${variantId}`)
+            const qtyVal = document.getElementById(`qty-val-${productId}-${variantId}`)
+
+            if(qtyBox && addBtn && qtyVal){
+                qtyBox.style.display = "flex"
+                addBtn.style.display = "none"
+                qtyVal.innerText = item.quantity
+            }
+        })
+    })
+    .catch(err => console.error("Cart load failed:", err))
+})
+
+/* ================= GLOBAL ================= */
+window.updateCartQty = updateCartQty;
+
+/* ================= FILTER FUNCTIONS ================= */
+window.toggleFilters = function () {
+    const box = document.getElementById("filterBox");
+    if (box) box.classList.toggle("active");
+};
+
+window.searchProducts = function () {
+    const input = document.getElementById("search");
+    const cards = document.querySelectorAll(".card");
+
+    const value = input.value.toLowerCase();
 
     cards.forEach(card => {
-
-      let show = true;
-
-      const cardCategory = card.dataset.cat;
-      const cardPrice = parseFloat(card.dataset.price);
-      const cardWeight = extractWeight(card.dataset.weight);
-      const cardName = card.dataset.name.toLowerCase();
-      const stockValue = parseInt(card.dataset.stock) || 0;
-
-      // CATEGORY
-      if (activeCategory !== "all" && cardCategory != activeCategory) {
-        show = false;
-      }
-
-      // SEARCH
-      if (searchInput.value.trim() !== "") {
-        show = show && cardName.includes(searchInput.value.toLowerCase());
-      }
-
-      // PRICE
-      show = show && cardPrice <= maxPrice;
-
-      // WEIGHT
-      if (minWeight !== "") {
-        show = show && cardWeight >= parseInt(minWeight);
-      }
-
-      // STOCK
-      if (inStock) {
-        show = show && stockValue > 0;
-      }
-
-      card.classList.toggle("hide", !show);
+        const name = card.dataset.name || "";
+        card.style.display = name.includes(value) ? "block" : "none";
     });
-  }
+};
 
-  window.filterCat = function (cat, el) {
-    activeCategory = String(cat);
+window.sortProducts = function(type){};
 
-    document.querySelectorAll(".cat-circle")
-      .forEach(c => c.classList.remove("active"));
+window.clearFilters = function(){
+    location.reload();
+};
 
-    el.classList.add("active");
-
-    applyFilters();
-  };
-
-  window.searchProducts = function () {
-    applyFilters();
-  };
-
-  window.sortProducts = function (type) {
-
-    const cardsArray = Array.from(getCards());
-
-    if (type === "relevance") {
-      location.reload();
-      return;
-    }
-
-    if (type === "low") {
-      cardsArray.sort((a, b) =>
-        parseFloat(a.dataset.price) - parseFloat(b.dataset.price)
-      );
-    }
-
-    if (type === "high") {
-      cardsArray.sort((a, b) =>
-        parseFloat(b.dataset.price) - parseFloat(a.dataset.price)
-      );
-    }
-
-    if (type === "name") {
-      cardsArray.sort((a, b) =>
-        a.dataset.name.localeCompare(b.dataset.name)
-      );
-    }
-
-    cardsArray.forEach(card => grid.appendChild(card));
-  };
-
-  window.filterPrice = function (value) {
-    maxPrice = parseFloat(value);
-    document.getElementById("priceVal").innerText = value;
-    applyFilters();
-  };
-
-  window.filterWeight = function (value) {
-    minWeight = value;
-    applyFilters();
-  };
-
-  window.filterStock = function (checkbox) {
-    inStock = checkbox.checked;
-    applyFilters();
-  };
-
-  window.clearFilters = function () {
-
-    activeCategory = "all";
-    maxPrice = Infinity;
-    minWeight = "";
-    inStock = false;
-    searchInput.value = "";
-
-    document.querySelectorAll(".cat-circle")
-      .forEach(c => c.classList.remove("active"));
-
-    document.querySelector(".cat-circle").classList.add("active");
-
-    document.getElementById("priceVal").innerText = "2000";
-
-    applyFilters();
-  };
-
-  window.wish = function (el) {
-    el.classList.toggle("active");
-    el.innerHTML = el.classList.contains("active") ? "❤" : "♡";
-  };
-
-  window.toggleFilters = function () {
-    document.getElementById("filterBox").classList.toggle("active");
-  };
-
-});
-
-document.addEventListener("DOMContentLoaded", function() {
-
-    const selectedCategory = "{{ selected_category|default:'' }}";
-
-    if(selectedCategory) {
-
-        const circles = document.querySelectorAll(".cat-circle");
-
-        circles.forEach(circle => {
-            const onclickValue = circle.getAttribute("onclick");
-
-            if(onclickValue && onclickValue.includes(selectedCategory)) {
-                circle.click();  // 🔥 trigger existing filter system
-            }
-        });
-    }
-
-});
+window.filterStock = function(){};
+window.filterWeight = function(){};
+window.filterPrice = function(val){
+    document.getElementById("priceVal").innerText = val;
+};
